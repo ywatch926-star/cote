@@ -1,56 +1,194 @@
 {
-  "schema_version": "1.0.0",
-  "description": "Presets de compositing multicouche pour F09 AETHER COMPOSITUM. Chaque preset reproduit la logique After Effects (cc2.ffx) via des filtres FFmpeg déterministes.",
+  "schema_version": "2.0.0",
+  "description": "Presets v2 — reconstruits depuis l'analyse réelle des projets .aep de la release CC. Chaîne exacte : S_Sharpen(x3) → BCC Unsharp Mask(x3) → MB Looks (ACES 1.0.3→Rec.709) → S_Glow(x2).",
+  "ae_project_analyzed": [
+    "AEditz Quality CC 2 {AE26}.aep",
+    "Mreditz x AEditz CC - Giveaway.aep"
+  ],
+  "extracted_effect_chain": {
+    "ae26_premium": [
+      "S_Sharpen (Sharpen Amp, Width, Luma, Chroma, Red, Green, Blue) × 3 passes",
+      "BCC Unsharp Mask (Radius, Amount, Threshold, Pre Smoothing, Preserve Contrast, Gamma) × 3 passes",
+      "MB LookSuite3 — OCIO: aces_1.0.3 → Output - Rec.709, Strength param",
+      "S_Glow (Brightness, Color, Threshold, Glow Width, Source Opacity, Bg Brightness) × 2 instances"
+    ],
+    "mreditz_simple": [
+      "ADBE Brightness & Contrast 2",
+      "ADBE CurvesCustom (S-curve)",
+      "ADBE Unsharp Mask2",
+      "BCC3 Unsharp Mask"
+    ],
+    "color_pipeline": {
+      "input_colorspace": "sRGB",
+      "working_space": "ACES 1.0.3 (ACEScct)",
+      "output_colorspace": "Rec.709 Gamma 2.4",
+      "ocio_config": "aces_1.0.3",
+      "base_color_profile": "Rec.709 Gamma 2.4"
+    }
+  },
   "mapping_reference": {
-    "ADBE Sharpen": "unsharp",
-    "ADBE Unsharp Mask2": "unsharp (paramètres séparés)",
-    "MB LookSuite3 / Magic Bullet Looks": "curves + colorbalance + eq",
-    "S_Gradient": "gradients via overlay ou drawbox",
-    "Compositing Options": "chaîne de filtres avec opacité contrôlée"
+    "S_Sharpen": "unsharp (multi-pass: 3 passes avec paramètres différents)",
+    "BCC3Unsharp Mask": "unsharp (multi-pass: 3 passes avec Radius/Amount/Threshold)",
+    "MB LookSuite3 + OCIO ACES→Rec709": "curves + eq + colorbalance (simule la transform ACES)",
+    "S_Glow": "gblur + blend=screen (simule le glow/bloom)",
+    "ADBE Brightness & Contrast 2": "eq=brightness + eq=contrast",
+    "ADBE CurvesCustom": "curves=m=...",
+    "ADBE Unsharp Mask2": "unsharp"
   },
   "presets": {
     "clean_realistic": {
-      "description": "Effet minimal, priorité au naturel. Détail préservé, contraste doux, aucun artefact visible.",
+      "description": "Reproduction fidèle de la chaîne AE26 : netteté multi-couche, grade ACES→Rec.709, glow doux.",
+      "ae_source": "AEditz Quality CC 2 {AE26}.aep",
       "layers": [
         {
-          "id": "detail_unsharp",
-          "effect": "ADBE Unsharp Mask2",
+          "id": "s_sharpen_pass1",
+          "effect": "S_Sharpen (pass 1 — detail fin)",
+          "ae_effect": "S_Sharpen",
+          "ae_params": {"sharpen_amp": "~1.57", "sharpen_width": "narrow", "sharpen_luma": "on", "sharpen_chroma": "off"},
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "unsharp=5:5:0.30:5:5:0",
-          "notes": "Netteté légère pour révéler le détail existant sans créner"
+          "ffmpeg_filter": "unsharp=3:3:0.50:3:3:0",
+          "notes": "Pass 1 S_Sharpen: Sharpen Amp élevé, Width étroit, Luma only"
+        },
+        {
+          "id": "s_sharpen_pass2",
+          "effect": "S_Sharpen (pass 2 — detail large)",
+          "ae_effect": "S_Sharpen",
+          "ae_params": {"sharpen_amp": "~1.57", "sharpen_width": "wide", "sharpen_luma": "on"},
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=7:7:0.30:7:7:0",
+          "notes": "Pass 2 S_Sharpen: Width large pour la structure globale"
+        },
+        {
+          "id": "s_sharpen_pass3",
+          "effect": "S_Sharpen (pass 3 — micro-texture)",
+          "ae_effect": "S_Sharpen",
+          "ae_params": {"sharpen_amp": "~1.57", "edge_threshold": "0.0339"},
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.20:5:5:0",
+          "notes": "Pass 3 S_Sharpen: micro-texture avec edge threshold (0.0339)"
+        },
+        {
+          "id": "bcc_unsharp_pass1",
+          "effect": "BCC Unsharp Mask (pass 1 — contraste local)",
+          "ae_effect": "BCC3Unsharp Mask",
+          "ae_params": {"radius": "moderate", "amount": "~15.77", "threshold": "42", "pre_smoothing": "42", "preserve_contrast": "32.5"},
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.40:5:5:3",
+          "notes": "BCC Unsharp Mask pass 1: Amount élevé, Threshold 42"
+        },
+        {
+          "id": "bcc_unsharp_pass2",
+          "effect": "BCC Unsharp Mask (pass 2 — structure)",
+          "ae_effect": "BCC3Unsharp Mask",
+          "ae_params": {"radius": "wide", "amount": "~15.77", "threshold": "42"},
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=7:7:0.35:7:7:2",
+          "notes": "BCC Unsharp Mask pass 2: radius large pour la structure"
+        },
+        {
+          "id": "bcc_unsharp_pass3",
+          "effect": "BCC Unsharp Mask (pass 3 — finition)",
+          "ae_effect": "BCC3Unsharp Mask",
+          "ae_params": {"radius": "narrow", "amount": "moderate", "gamma": "130"},
+          "enabled": true,
+          "opacity": 0.7,
+          "ffmpeg_filter": "unsharp=3:3:0.25:3:3:0",
+          "notes": "BCC Unsharp Mask pass 3: finition légère, gamma élevé (130)"
+        },
+        {
+          "id": "aces_color_grade",
+          "effect": "MB LookSuite3 + OCIO ACES 1.0.3 → Rec.709",
+          "ae_effect": "MB LookSuite3",
+          "ae_params": {"ocio_config": "aces_1.0.3", "output": "Output - Rec.709", "base_profile": "Rec.709 Gamma 2.4", "strength": "parametrizable"},
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "curves=m='0/0.01 0.05/0.04 0.1/0.09 0.2/0.18 0.3/0.28 0.4/0.39 0.5/0.50 0.6/0.61 0.7/0.72 0.8/0.83 0.9/0.92 1/1',eq=contrast=1.05:brightness=0.008:saturation=0.97:gamma=1.02,colorbalance=rs=-0.008:gs=0.0:bs=0.008:rm=0.005:gm=0.0:bm=-0.005",
+          "notes": "Simule ACES 1.0.3→Rec.709: lift blacks, compress highlights, légère désaturation, teinte froide shadows / chaude midtones"
+        },
+        {
+          "id": "s_glow_pass1",
+          "effect": "S_Glow (pass 1 — glow large)",
+          "ae_effect": "S_Glow",
+          "ae_params": {"brightness": "moderate", "threshold": "~195", "glow_width": "wide", "source_opacity": "parametrizable", "bg_brightness": "parametrizable"},
+          "enabled": true,
+          "opacity": 0.35,
+          "ffmpeg_filter": "split[main][glow];[glow]boxblur=20:20[blurred];[blurred]curves=m='0/0 0.7/0.72 0.9/0.96 1/1'[glowbright];[main][glowbright]blend=all_mode=screen:all_opacity=0.35",
+          "notes": "S_Glow pass 1: Glow Width large (boxblur 20), Threshold élevé (195), Screen blend"
+        },
+        {
+          "id": "s_glow_pass2",
+          "effect": "S_Glow (pass 2 — glow serré)",
+          "ae_effect": "S_Glow",
+          "ae_params": {"brightness": "low", "glow_width": "narrow", "opacity": "parametrizable"},
+          "enabled": true,
+          "opacity": 0.15,
+          "ffmpeg_filter": "split[main][glow];[glow]boxblur=8:8[blurred];[blurred]curves=m='0/0 0.8/0.82 1/1'[glowbright];[main][glowbright]blend=all_mode=screen:all_opacity=0.15",
+          "notes": "S_Glow pass 2: Glow Width serré pour un halos plus défini"
+        }
+      ],
+      "global": {
+        "output_codec": "libx264",
+        "preset": "slow",
+        "crf": 18,
+        "pix_fmt": "yuv420p",
+        "movflags": "+faststart",
+        "audio_policy": "copy"
+      }
+    },
+    "mreditz_giveaway": {
+      "description": "Reproduction de la chaîne Mreditz x AEditz CC Giveaway : Brightness/Contrast → Curves → Unsharp → BCC Unsharp.",
+      "ae_source": "Mreditz x AEditz CC - Giveaway.aep",
+      "layers": [
+        {
+          "id": "brightness_contrast",
+          "effect": "ADBE Brightness & Contrast 2",
+          "ae_effect": "ADBE Brightness & Contrast 2",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "eq=brightness=0.01:contrast=1.06",
+          "notes": "Brightness & Contrast natif AE"
         },
         {
           "id": "curves_s",
-          "effect": "MB LookSuite3",
-          "enabled": true,
-          "opacity": 0.7,
-          "ffmpeg_filter": "curves=preset=lighter",
-          "notes": "S-curve très douce pour un contraste naturel"
-        },
-        {
-          "id": "contrast_eq",
-          "effect": "MB LookSuite3",
+          "effect": "ADBE CurvesCustom (S-curve)",
+          "ae_effect": "ADBE CurvesCustom",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "eq=contrast=1.04:brightness=0.005:saturation=1.02:gamma=1.01",
-          "notes": "Micro-ajustement global — quasi invisible mais corrige la platitude"
+          "ffmpeg_filter": "curves=m='0/0 0.15/0.10 0.5/0.50 0.85/0.90 1/1'",
+          "notes": "S-curve classique"
         },
         {
-          "id": "color_balance",
-          "effect": "MB LookSuite3",
+          "id": "unsharp_native",
+          "effect": "ADBE Unsharp Mask2",
+          "ae_effect": "ADBE Unsharp Mask2",
           "enabled": true,
-          "opacity": 0.5,
-          "ffmpeg_filter": "colorbalance=rs=0.01:gs=0.0:bs=-0.01:rm=0.005:gm=0.0:bm=-0.005",
-          "notes": "Teinte légèrement chaude dans les ombres, froide dans les hautes lumières"
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.60:5:5:0",
+          "notes": "Unsharp Mask natif AE"
         },
         {
-          "id": "grain_texture",
-          "effect": "Custom",
+          "id": "bcc_unsharp",
+          "effect": "BCC3 Unsharp Mask",
+          "ae_effect": "BCC3Unsharp Mask",
           "enabled": true,
-          "opacity": 0.3,
-          "ffmpeg_filter": "noise=c0s=3:c0f=t+u,format=yuv420p",
-          "notes": "Grain film très léger pour la texture organique"
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.35:5:5:3",
+          "notes": "BCC Unsharp Mask — second pass"
+        },
+        {
+          "id": "aces_tint",
+          "effect": "MB LookSuite3 (subtil ACES tint)",
+          "ae_effect": "MB LookSuite3",
+          "ae_params": {"ocio_config": "aces_1.0.3", "output": "Output - Rec.709"},
+          "enabled": true,
+          "opacity": 0.6,
+          "ffmpeg_filter": "curves=m='0/0.01 0.5/0.51 1/0.99',colorbalance=rs=-0.005:bs=0.005",
+          "notes": "Teinte ACES légère — lift blacks, split toning"
         }
       ],
       "global": {
@@ -63,55 +201,52 @@
       }
     },
     "silver_gray": {
-      "description": "Désaturation contrôlée, contraste métallique, hautes lumières froides et noirs lisibles.",
+      "description": "Désaturation contrôlée ACES, contraste métallique, hautes lumières froides.",
       "layers": [
         {
-          "id": "detail_unsharp",
-          "effect": "ADBE Unsharp Mask2",
+          "id": "s_sharpen_pass1",
+          "effect": "S_Sharpen (pass 1)",
+          "ae_effect": "S_Sharpen",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "unsharp=5:5:0.42:5:5:0",
-          "notes": "Netteté modérée pour accentuer la texture métallique"
+          "ffmpeg_filter": "unsharp=3:3:0.55:3:3:0",
+          "notes": "Netté forte pour texture métallique"
         },
         {
-          "id": "desaturate",
-          "effect": "MB LookSuite3",
+          "id": "s_sharpen_pass2",
+          "effect": "S_Sharpen (pass 2)",
+          "ae_effect": "S_Sharpen",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "eq=saturation=0.55",
-          "notes": "Désaturation forte mais pas monochrome"
+          "ffmpeg_filter": "unsharp=7:7:0.35:7:7:0",
+          "notes": "Structure large"
         },
         {
-          "id": "curves_metal",
-          "effect": "MB LookSuite3",
-          "enabled": true,
-          "opacity": 0.85,
-          "ffmpeg_filter": "curves=m='0/0 0.2/0.15 0.5/0.52 0.8/0.88 1/1'",
-          "notes": "S-curve métallique — ombres remontées légèrement, hautes lumières pincées"
-        },
-        {
-          "id": "contrast_eq",
-          "effect": "MB LookSuite3",
+          "id": "bcc_unsharp",
+          "effect": "BCC Unsharp Mask",
+          "ae_effect": "BCC3Unsharp Mask",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "eq=contrast=1.08:brightness=-0.01:saturation=0.55:gamma=0.98",
-          "notes": "Contraste renforcé, température froide"
+          "ffmpeg_filter": "unsharp=5:5:0.45:5:5:3",
+          "notes": "Contraste local fort"
         },
         {
-          "id": "color_balance",
-          "effect": "MB LookSuite3",
+          "id": "aces_metal_grade",
+          "effect": "MB Looks ACES metal",
+          "ae_effect": "MB LookSuite3",
           "enabled": true,
-          "opacity": 0.7,
-          "ffmpeg_filter": "colorbalance=rs=-0.02:gs=0.0:bs=0.03:rm=-0.01:gm=0.0:bm=0.02",
-          "notes": "Tons froids dans les ombres et les midtones"
+          "opacity": 1.0,
+          "ffmpeg_filter": "eq=saturation=0.45:contrast=1.12:brightness=-0.012:gamma=0.97,curves=m='0/0.02 0.2/0.14 0.5/0.52 0.8/0.88 1/1',colorbalance=rs=-0.015:gs=0.0:bs=0.025:rm=-0.008:gm=0.0:bm=0.015",
+          "notes": "ACES désaturé — teinte froide ombres/midtones"
         },
         {
-          "id": "grain_texture",
-          "effect": "Custom",
+          "id": "s_glow",
+          "effect": "S_Glow (métallique)",
+          "ae_effect": "S_Glow",
           "enabled": true,
-          "opacity": 0.4,
-          "ffmpeg_filter": "noise=c0s=5:c0f=t+u,format=yuv420p",
-          "notes": "Grain plus prononcé pour renforcer l'aspect argentique"
+          "opacity": 0.25,
+          "ffmpeg_filter": "split[main][glow];[glow]boxblur=15:15[blurred];[blurred]curves=m='0/0 0.7/0.72 0.9/0.95 1/1'[glowbright];[main][glowbright]blend=all_mode=screen:all_opacity=0.25",
+          "notes": "Glow froid pour l'aspect métallique"
         }
       ],
       "global": {
@@ -124,55 +259,63 @@
       }
     },
     "dark": {
-      "description": "Contraste cinématique et teinte sombre sans écraser la texture des vêtements.",
+      "description": "Contraste cinématique ACES, noirs profonds mais lisibles.",
       "layers": [
         {
-          "id": "detail_unsharp",
-          "effect": "ADBE Unsharp Mask2",
+          "id": "s_sharpen_pass1",
+          "effect": "S_Sharpen (pass 1)",
+          "ae_effect": "S_Sharpen",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "unsharp=5:5:0.38:5:5:0",
-          "notes": "Netteté présente mais contrôlée"
+          "ffmpeg_filter": "unsharp=3:3:0.45:3:3:0",
+          "notes": "Détail fin préservé"
         },
         {
-          "id": "curves_cinematic",
-          "effect": "MB LookSuite3",
-          "enabled": true,
-          "opacity": 0.9,
-          "ffmpeg_filter": "curves=m='0/0 0.1/0.05 0.5/0.45 0.85/0.9 1/1'",
-          "notes": "S-curve cinématique — noirs profonds mais pas bouchés"
-        },
-        {
-          "id": "contrast_eq",
-          "effect": "MB LookSuite3",
+          "id": "s_sharpen_pass2",
+          "effect": "S_Sharpen (pass 2)",
+          "ae_effect": "S_Sharpen",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "eq=contrast=1.10:brightness=-0.015:saturation=0.95:gamma=0.96",
-          "notes": "Contraste fort, luminosité baissée, saturation légèrement réduite"
+          "ffmpeg_filter": "unsharp=7:7:0.28:7:7:0",
+          "notes": "Structure large"
         },
         {
-          "id": "color_balance",
-          "effect": "MB LookSuite3",
+          "id": "bcc_unsharp_pass1",
+          "effect": "BCC Unsharp Mask (pass 1)",
+          "ae_effect": "BCC3Unsharp Mask",
           "enabled": true,
-          "opacity": 0.6,
-          "ffmpeg_filter": "colorbalance=rs=-0.01:gs=0.0:bs=0.02:rm=0.01:gm=0.0:bm=-0.01",
-          "notes": "Teinte chaude dans les ombres pour la profondeur"
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.40:5:5:3",
+          "notes": "Contraste local — Threshold 42"
         },
         {
-          "id": "shadow_lift",
-          "effect": "S_Gradient",
+          "id": "bcc_unsharp_pass2",
+          "effect": "BCC Unsharp Mask (pass 2)",
+          "ae_effect": "BCC3Unsharp Mask",
           "enabled": true,
-          "opacity": 0.3,
-          "ffmpeg_filter": "curves=m='0/0.02 0.1/0.06 0.5/0.48 1/0.97'",
-          "notes": "Lift très subtil dans les noirs pour garder la lisibilité des textures"
+          "opacity": 0.7,
+          "ffmpeg_filter": "unsharp=5:5:0.20:5:5:0",
+          "notes": "Finition légère"
         },
         {
-          "id": "grain_texture",
-          "effect": "Custom",
+          "id": "aces_cinema_grade",
+          "effect": "MB Looks ACES cinema",
+          "ae_effect": "MB LookSuite3",
+          "ae_params": {"ocio_config": "aces_1.0.3", "output": "Output - Rec.709"},
           "enabled": true,
-          "opacity": 0.35,
-          "ffmpeg_filter": "noise=c0s=4:c0f=t+u,format=yuv420p",
-          "notes": "Grain cinématique léger"
+          "opacity": 1.0,
+          "ffmpeg_filter": "curves=m='0/0.01 0.1/0.04 0.5/0.44 0.85/0.88 1/0.98',eq=contrast=1.10:brightness=-0.018:saturation=0.92:gamma=0.95,colorbalance=rs=-0.008:gs=0.0:bs=0.012:rm=0.008:gm=0.0:bm=-0.006",
+          "notes": "ACES cinématique — noirs profonds, highlight compression, teinte chaude ombres"
+        },
+        {
+          "id": "s_glow_cinema",
+          "effect": "S_Glow (cinématique)",
+          "ae_effect": "S_Glow",
+          "ae_params": {"brightness": "moderate", "threshold": "195", "glow_width": "wide"},
+          "enabled": true,
+          "opacity": 0.20,
+          "ffmpeg_filter": "split[main][glow];[glow]boxblur=18:18[blurred];[blurred]curves=m='0/0 0.7/0.72 0.9/0.95 1/1'[glowbright];[main][glowbright]blend=all_mode=screen:all_opacity=0.20",
+          "notes": "Glow subtil pour la profondeur cinématique"
         }
       ],
       "global": {
@@ -185,55 +328,53 @@
       }
     },
     "warm": {
-      "description": "Tons chair protégés, hautes lumières chaudes et saturation sélective.",
+      "description": "Tons chair protégés, chaleur ACES sélective.",
       "layers": [
         {
-          "id": "detail_unsharp",
-          "effect": "ADBE Unsharp Mask2",
+          "id": "s_sharpen",
+          "effect": "S_Sharpen (douce)",
+          "ae_effect": "S_Sharpen",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "unsharp=5:5:0.34:5:5:0",
-          "notes": "Netteté douce pour préserver la douceur des tons chair"
+          "ffmpeg_filter": "unsharp=5:5:0.35:5:5:0",
+          "notes": "Netteté douce pour tons chair"
+        },
+        {
+          "id": "bcc_unsharp",
+          "effect": "BCC Unsharp Mask",
+          "ae_effect": "BCC3Unsharp Mask",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.30:5:5:2",
+          "notes": "Contraste local léger"
         },
         {
           "id": "curves_warm",
-          "effect": "MB LookSuite3",
-          "enabled": true,
-          "opacity": 0.8,
-          "ffmpeg_filter": "curves=m='0/0 0.15/0.16 0.5/0.53 0.85/0.88 1/1'",
-          "notes": "Lift subtil dans les shadows pour protéger les tons chair"
-        },
-        {
-          "id": "contrast_eq",
-          "effect": "MB LookSuite3",
+          "effect": "ADBE CurvesCustom (warm S-curve)",
+          "ae_effect": "ADBE CurvesCustom",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "eq=contrast=1.06:brightness=0.008:saturation=1.08:gamma=1.02",
-          "notes": "Saturation légèrement accrue, gamma doux pour la chaleur"
+          "ffmpeg_filter": "curves=m='0/0 0.15/0.16 0.5/0.53 0.85/0.88 1/1'",
+          "notes": "S-curve avec lift dans les shadows"
         },
         {
-          "id": "color_balance",
-          "effect": "MB LookSuite3",
+          "id": "aces_warm_grade",
+          "effect": "MB Looks ACES warm",
+          "ae_effect": "MB LookSuite3",
+          "ae_params": {"ocio_config": "aces_1.0.3", "output": "Output - Rec.709"},
           "enabled": true,
-          "opacity": 0.8,
-          "ffmpeg_filter": "colorbalance=rs=0.02:gs=0.005:bs=-0.02:rm=0.03:gm=0.01:bm=-0.02",
-          "notes": "Chaleur dans les ombres et les midtones"
+          "opacity": 1.0,
+          "ffmpeg_filter": "eq=contrast=1.05:brightness=0.008:saturation=1.10:gamma=1.03,colorbalance=rs=0.015:gs=0.005:bs=-0.018:rm=0.025:gm=0.008:bm=-0.015",
+          "notes": "Chaleur ACES — saturation accrue, teinte chaude"
         },
         {
-          "id": "skin_protection",
-          "effect": "Custom",
+          "id": "s_glow_warm",
+          "effect": "S_Glow (chaud)",
+          "ae_effect": "S_Glow",
           "enabled": true,
-          "opacity": 0.4,
-          "ffmpeg_filter": "eq=saturation=1.04:gamma=1.01",
-          "notes": "Protection supplémentaire des tons chair via gamma lift"
-        },
-        {
-          "id": "grain_texture",
-          "effect": "Custom",
-          "enabled": true,
-          "opacity": 0.25,
-          "ffmpeg_filter": "noise=c0s=3:c0f=t+u,format=yuv420p",
-          "notes": "Grain très subtil pour garder le naturel"
+          "opacity": 0.20,
+          "ffmpeg_filter": "split[main][glow];[glow]boxblur=12:12[blurred];[blurred]curves=m='0/0 0.7/0.73 0.9/0.96 1/1'[glowbright];[main][glowbright]blend=all_mode=screen:all_opacity=0.20",
+          "notes": "Glow chaud"
         }
       ],
       "global": {
@@ -246,55 +387,63 @@
       }
     },
     "viral_hdr": {
-      "description": "Overlay lumineux, contraste plus fort, glow limité et énergie accrue.",
+      "description": "Impact visuel maximal. Netteté agressive, contraste fort, glow prononcé.",
       "layers": [
         {
-          "id": "detail_unsharp",
-          "effect": "ADBE Sharpen",
+          "id": "s_sharpen_pass1",
+          "effect": "S_Sharpen (pass 1 — agressif)",
+          "ae_effect": "S_Sharpen",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "unsharp=5:5:0.48:5:5:0",
-          "notes": "Netté plus agressive pour l'impact visuel"
+          "ffmpeg_filter": "unsharp=3:3:0.65:3:3:0",
+          "notes": "Sharpen Amp élevé pour l'impact"
         },
         {
-          "id": "curves_hdr",
-          "effect": "MB LookSuite3",
-          "enabled": true,
-          "opacity": 0.9,
-          "ffmpeg_filter": "curves=m='0/0 0.1/0.08 0.5/0.55 0.9/0.95 1/1'",
-          "notes": "S-curve HDR — ombres profondes, hautes lumières brillantes"
-        },
-        {
-          "id": "contrast_eq",
-          "effect": "MB LookSuite3",
+          "id": "s_sharpen_pass2",
+          "effect": "S_Sharpen (pass 2)",
+          "ae_effect": "S_Sharpen",
           "enabled": true,
           "opacity": 1.0,
-          "ffmpeg_filter": "eq=contrast=1.14:brightness=0.005:saturation=1.18:gamma=1.03",
-          "notes": "Contraste et saturation élevés pour l'énergie"
+          "ffmpeg_filter": "unsharp=7:7:0.45:7:7:0",
+          "notes": "Structure large agressive"
         },
         {
-          "id": "color_balance",
-          "effect": "MB LookSuite3",
+          "id": "bcc_unsharp_pass1",
+          "effect": "BCC Unsharp Mask (pass 1)",
+          "ae_effect": "BCC3Unsharp Mask",
           "enabled": true,
-          "opacity": 0.7,
-          "ffmpeg_filter": "colorbalance=rs=-0.01:gs=0.0:bs=-0.01:rm=0.02:gm=0.0:bm=-0.01",
-          "notes": "Teinte légèrement chaude globalement"
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.55:5:5:3",
+          "notes": "Contraste local très fort"
         },
         {
-          "id": "highlight_bloom",
-          "effect": "S_Gradient",
+          "id": "bcc_unsharp_pass2",
+          "effect": "BCC Unsharp Mask (pass 2)",
+          "ae_effect": "BCC3Unsharp Mask",
           "enabled": true,
-          "opacity": 0.25,
-          "ffmpeg_filter": "curves=m='0/0 0.7/0.72 0.9/0.96 1/1'",
-          "notes": "Glow limité sur les hautes lumières — overlay luminant"
+          "opacity": 0.8,
+          "ffmpeg_filter": "unsharp=5:5:0.30:5:5:0",
+          "notes": "Finition"
         },
         {
-          "id": "grain_texture",
-          "effect": "Custom",
+          "id": "aces_hdr_grade",
+          "effect": "MB Looks ACES HDR",
+          "ae_effect": "MB LookSuite3",
+          "ae_params": {"ocio_config": "aces_1.0.3", "output": "Output - Rec.709"},
           "enabled": true,
-          "opacity": 0.2,
-          "ffmpeg_filter": "noise=c0s=2:c0f=t+u,format=yuv420p",
-          "notes": "Grain très léger — on veut la clarté"
+          "opacity": 1.0,
+          "ffmpeg_filter": "curves=m='0/0 0.1/0.06 0.5/0.55 0.9/0.96 1/1',eq=contrast=1.16:brightness=0.005:saturation=1.22:gamma=1.04,colorbalance=rs=-0.005:bs=-0.005:rm=0.012:bm=-0.008",
+          "notes": "ACES HDR — contraste/saturation poussés"
+        },
+        {
+          "id": "s_glow_bright",
+          "effect": "S_Glow (lumineux)",
+          "ae_effect": "S_Glow",
+          "ae_params": {"brightness": "high", "threshold": "150", "glow_width": "wide"},
+          "enabled": true,
+          "opacity": 0.40,
+          "ffmpeg_filter": "split[main][glow];[glow]boxblur=22:22[blurred];[blurred]curves=m='0/0 0.6/0.64 0.85/0.92 1/1'[glowbright];[main][glowbright]blend=all_mode=screen:all_opacity=0.40",
+          "notes": "Glow intense pour l'impact HDR"
         }
       ],
       "global": {
