@@ -1,0 +1,23 @@
+FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    MODEL_DIR=/models \
+    VIDEO_DIR=/data
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 python3.11-venv python3-pip ffmpeg git ca-certificates \
+    && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/local/bin/pip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY modal/requirements/video-gpu.txt /app/requirements.txt
+RUN python3.11 -m pip install --upgrade pip && python3.11 -m pip install -r /app/requirements.txt
+
+COPY modal/workers /app/workers
+COPY modal/rife_runtime /app/rife_runtime
+COPY modal/bootstrap_worker.py /app/bootstrap_worker.py
+COPY BACKUP /app/BACKUP
+COPY CONFIG /app/CONFIG

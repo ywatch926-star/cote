@@ -1,0 +1,102 @@
+name: F05-F06 CAMOUFLAGE + LUTHER (dev)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'Run F04 Matrix source de lac-video-finale'
+        required: true
+        type: string
+      source_artifact:
+        description: 'Nom de l’artifact F04 final'
+        required: false
+        default: 'lac-video-finale'
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  BRANCH: ${{ github.ref_name }}
+  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+  SOURCE_ARTIFACT: ${{ inputs.source_artifact || 'lac-video-finale' }}
+
+jobs:
+  camoufler:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout branche courante
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps (requests pour download_artifact)
+        run: pip install requests -q
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: F05 - Download artifact final du F04 Matrix
+        run: |
+          test -n "$SOURCE_RUN_ID"
+          python3 tools/download_artifact_run.py "$SOURCE_RUN_ID" "$SOURCE_ARTIFACT" F05_CAMOUFLAGE/IN/
+          test -n "$(find F05_CAMOUFLAGE/IN -type f -name '*.mp4' -print -quit)"
+          echo "  [→] Source F04 : run $SOURCE_RUN_ID / artifact $SOURCE_ARTIFACT"
+          find F05_CAMOUFLAGE/IN -maxdepth 2 -type f -printf '%p\n'
+
+      - name: F05 - Camouflage (wipe métadonnées + loudnorm -14 LUFS)
+        run: |
+          cd F05_CAMOUFLAGE/CODEBASE
+          python3 lac_f05_camouflage.py --input ../IN/ --output ../OUT/
+
+      - name: F05 - Gardien CUSTOS
+        run: python3 LAC_CUSTOS.py --frigate F05 --mode check-out --drive-base .
+
+      - name: F05 - Upload lac-youtube
+        uses: actions/upload-artifact@v4
+        with:
+          name: lac-youtube
+          path: F05_CAMOUFLAGE/OUT/
+          retention-days: 14
+
+      - name: F05 - Ledger + commit
+        run: |
+          python3 _tools/update_ledger.py F05
+          git config user.name "lacrimae-orchestrator"
+          git config user.email "orchestrator@lacrimae"
+          git add TRACKING/LACRIMAE_LEDGER.json
+          git commit -m "ledger: fregate F05 — camouflage [skip ci]" || echo "No change"
+          git push
+
+      - name: F06 - Luther (stream copy, empreinte zéro) sur l'OUT de F05
+        run: |
+          mkdir -p F06_LUTHER/OUT
+          cd F06_LUTHER/CODEBASE
+          python3 lac_f06_luther.py --input ../../F05_CAMOUFLAGE/OUT/ --output ../OUT/
+
+      - name: F06 - Gardien CUSTOS
+        run: python3 LAC_CUSTOS.py --frigate F06 --mode check-out --drive-base .
+
+      - name: F06 - Upload lac-clean
+        uses: actions/upload-artifact@v4
+        with:
+          name: lac-clean
+          path: F06_LUTHER/OUT/
+          retention-days: 14
+
+      - name: F06 - Ledger + commit
+        run: |
+          python3 _tools/update_ledger.py F06
+          git config user.name "lacrimae-orchestrator"
+          git config user.email "orchestrator@lacrimae"
+          git add TRACKING/LACRIMAE_LEDGER.json
+          git commit -m "ledger: fregate F06 — production complète [skip ci]" || echo "No change"
+          git push

@@ -1,0 +1,21 @@
+{
+  "name": "lacrimae-pictor",
+  "version": "1.0.0",
+  "description": "LACRIMAE F03 PICTOR — Remotion video renderer",
+  "main": "index.jsx",
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render LacrimaeShort out/short_final.mp4",
+    "render": "remotion render LacrimaeShort out/short_final.mp4 --concurrency 1"
+  },
+  "dependencies": {
+    "remotion": "^4.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@remotion/google-fonts": "^4.0.0",
+    "@remotion/cli": "^4.0.0"
+  },
+  "remotion": {
+    "entryPoint": "index.jsx"
+  }
+}

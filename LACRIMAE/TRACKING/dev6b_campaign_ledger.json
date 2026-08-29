@@ -1,0 +1,66 @@
+{
+  "project": "LACRIMAE",
+  "branch": "dev6-B",
+  "label": "120 fps",
+  "stable_branch": "dev6",
+  "schema_version": "1.0",
+  "current_status": "READY_FOR_F09_AETHER_COMPOSITUM",
+  "active_work": "Develop F09 AETHER COMPOSITUM preset stack",
+  "modal": {
+    "last_workspace": "tekfugo",
+    "app": "lacrimae-dev6-video",
+    "video_volume": "lacrimae-dev6-video",
+    "model_volume": "lacrimae-dev6-models",
+    "credits_status": "unknown_until_account_check"
+  },
+  "capabilities": {
+    "rife": "4.25",
+    "face_restoration": "GFPGANv1.3",
+    "adaptive_analysis": "AUSPEX PIXEL/TEMPORAL",
+    "profiles": [
+      "hdr_imperator",
+      "realistic_aurea",
+      "old_main_noctis",
+      "viral_imperator"
+    ],
+    "temporal_guard_default_strength": 0.0,
+    "face_frame_stride_configurable": true,
+    "upscale_4k_default": false
+  },
+  "campaigns": [
+    {
+      "id": "v2_original_5s_run2",
+      "source": "rife_input_5s.mp4",
+      "source_resolution": "1920x1080",
+      "source_fps": 30,
+      "target_fps": 120,
+      "profile": "hdr_imperator",
+      "status": "SEALED",
+      "output_resolution": "1920x1080",
+      "output_frames": 597,
+      "faces_detected": 272,
+      "face_frame_stride": 4,
+      "audio_in_source": false,
+      "notes": "Successful v2 test on workspace tekfugo; F08 was transparent."
+    }
+  ],
+  "gates": {
+    "G0_PORTA": "PASSED_ON_LAST_CAMPAIGN",
+    "G1_AUSPEX": "PASSED_ON_LAST_CAMPAIGN",
+    "G2_MOTUS": "PASSED_ON_LAST_CAMPAIGN",
+    "G3_ENHANCE": "PASSED_WITH_REVIEW",
+    "G4_FACIES": "PASSED_WITH_REVIEW",
+    "G5_CHROMA": "PASSED_WITH_REVIEW",
+    "G6_TEMPORALIS": "PENDING_REAL_TEMPORAL_TEST",
+    "G7_AETHER": "PENDING",
+    "G8_HUMANUS": "PENDING",
+    "G9_CUSTOS": "PASSED_ON_LAST_CAMPAIGN"
+  },
+  "next_actions": [
+    "Define F09 preset schema",
+    "Map cc2.ffx effect stack to headless layers",
+    "Implement local CPU compositing prototype",
+    "Run comparison without GPU",
+    "Use a short GPU run only after local validation"
+  ]
+}

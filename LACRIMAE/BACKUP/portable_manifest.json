@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "project": "LACRIMAE_VIDEO_FLEET",
+  "code": {
+    "repository": "https://github.com/kioka8877-ux/LACRIMAE.git",
+    "branch": "dev6",
+    "source_of_truth": "git"
+  },
+  "container": {
+    "dockerfile": "modal/images/Dockerfile.video-gpu",
+    "app_file": "modal/workers/video_worker.py",
+    "app_name": "lacrimae-dev6-video",
+    "image_strategy": "rebuild_from_versioned_dockerfile"
+  },
+  "model_source": {
+    "backend": "independent_object_storage",
+    "prefix": "models/",
+    "manifest": "models/models_manifest.json",
+    "cache_volume": "lacrimae-dev6-models"
+  },
+  "campaign_source": {
+    "backend": "independent_object_storage",
+    "prefix": "campaigns/",
+    "cache_volume": "lacrimae-dev6-video"
+  },
+  "worker_bootstrap": {
+    "entrypoint": "modal/bootstrap_worker.py",
+    "required_env": [
+      "STORAGE_S3_ENDPOINT",
+      "STORAGE_S3_REGION",
+      "STORAGE_S3_BUCKET",
+      "STORAGE_S3_ACCESS_KEY_ID",
+      "STORAGE_S3_SECRET_ACCESS_KEY"
+    ]
+  },
+  "integrity": {
+    "require_sha256": true,
+    "require_version_pins": true,
+    "allow_unlisted_models": false
+  }
+}

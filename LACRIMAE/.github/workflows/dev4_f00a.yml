@@ -1,0 +1,93 @@
+name: LACRIMAE dev4 — F00-A Scout only
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_duration_seconds:
+        description: 'Durée cible du Short'
+        required: true
+        default: '10'
+      cut_interval_frames:
+        description: 'Frames par séquence'
+        required: true
+        default: '7'
+      project_title:
+        description: 'Titre de la production'
+        required: true
+        default: 'Lacrimae dev4 F00-A'
+      source_url:
+        description: 'URL de la vidéo source f00'
+        required: true
+        default: 'https://github.com/kioka8877-ux/LACRIMAE/releases/download/f00/YTDown.com_YouTube_La-rage-de-Dark-Vador-Rogue-One-Star-War_Media_QXsPNstxLr0_001_1080p.mp4'
+
+permissions:
+  contents: read
+
+jobs:
+  f00a_scout:
+    name: F00-A — SCOUT uniquement
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TARGET_DURATION: ${{ inputs.target_duration_seconds }}
+      CUT_INTERVAL: ${{ inputs.cut_interval_frames }}
+      PROJECT_TITLE: ${{ inputs.project_title }}
+      SOURCE_URL: ${{ inputs.source_url }}
+    steps:
+      - name: Checkout dev4
+        uses: actions/checkout@v4
+
+      - name: Installer Python, numpy et FFmpeg
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer dépendances
+        run: |
+          python -m pip install --upgrade pip numpy
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Télécharger la source f00
+        run: |
+          mkdir -p F00_INGEST/IN F00_INGEST/OUT/scout
+          curl -L --fail --retry 3 "$SOURCE_URL" -o F00_INGEST/IN/video_source.mp4
+          test -s F00_INGEST/IN/video_source.mp4
+
+      - name: Préparer la demande F00-A
+        run: |
+          cat > F00_INGEST/IN/production_request.json <<JSON
+          {
+            "project_title": "${PROJECT_TITLE}",
+            "target_duration_seconds": ${TARGET_DURATION},
+            "cut_interval_frames": ${CUT_INTERVAL},
+            "candidate_count": 172,
+            "scout_sample_fps": 2.0,
+            "min_mean_luma": 0.075,
+            "min_luma_std": 0.025,
+            "min_candidate_gap_seconds": 0.35
+          }
+          JSON
+
+      - name: F00-A — SCOUT uniquement
+        run: |
+          python3 F00_INGEST/CODEBASE/f00_scout.py \
+            --source F00_INGEST/IN/video_source.mp4 \
+            --request F00_INGEST/IN/production_request.json \
+            --out F00_INGEST/OUT/scout
+
+      - name: Valider le plan F00-A
+        run: |
+          test -s F00_INGEST/OUT/scout/sequences_plan.json
+          test -s F00_INGEST/OUT/scout/scout_report.json
+          python3 -c "import json; d=json.load(open('F00_INGEST/OUT/scout/sequences_plan.json')); assert d['schema_version']=='dev4.sequence-plan.v1'; assert d['sequences']; print('F00-A plan valid:', len(d['candidate_sequences']), 'candidates;', len(d['sequences']), 'sequences')"
+
+      - name: Publier uniquement l’artefact F00-A
+        uses: actions/upload-artifact@v4
+        with:
+          name: lacrimae-dev4-f00a-${{ github.run_id }}
+          path: |
+            F00_INGEST/OUT/scout/sequences_plan.json
+            F00_INGEST/OUT/scout/scout_report.json
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,8 @@
+{
+  "project_title": "Luxury Match Cut 01",
+  "target_duration_seconds": 10,
+  "cut_interval_frames": 7,
+  "candidate_count": 100,
+  "shuffle_seed": 2026,
+  "short_count": 1
+}

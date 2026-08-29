@@ -1,0 +1,32 @@
+name: LACRIMAE dev6 — Foundation Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev6]
+    paths:
+      - 'ORACLE/**'
+      - 'SCHEMAS/**'
+      - 'LAC_CUSTOS_VIDEO.py'
+      - 'F00_INGEST/**'
+      - 'tests/**'
+      - '.github/workflows/dev6_foundations.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout dev6
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run foundation test
+        run: python tests/test_foundations.py
+      - name: Validate Python syntax
+        run: python -m compileall -q ORACLE F00_INGEST LAC_CUSTOS_VIDEO.py

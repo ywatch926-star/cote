@@ -1,0 +1,17 @@
+{
+  "name": "lacrimae-pictor-dev4",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "remotion render src/index.jsx LacrimaeShort out/short_final.mp4 --concurrency=1",
+    "check": "remotion compositions src/index.jsx",
+    "studio": "remotion studio src/index.jsx"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "remotion": "^4.0.0"
+  }
+}

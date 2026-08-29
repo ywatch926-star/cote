@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.2.0",
+  "default_profile": "hdr_imperator",
+  "compositing_preset_map": {
+    "cinematic_hyper_detail": "clean_realistic",
+    "hdr_imperator": "viral_hdr",
+    "realistic_aurea": "clean_realistic",
+    "old_main_noctis": "dark",
+    "viral_imperator": "viral_hdr",
+    "balanced": "clean_realistic"
+  },
+  "profiles": {
+    "cinematic_hyper_detail": {
+      "description": "Profil historique ATOM-IC conservé pour compatibilité.",
+      "compositing_preset": "clean_realistic",
+      "restaura": {"denoise_luma": 0.55, "denoise_chroma": 0.45, "unsharp_amount": 0.42, "unsharp_radius": 5},
+      "textura": {"contrast": 1.12, "saturation": 1.12, "unsharp_amount": 0.58, "unsharp_radius": 5, "local_detail": 0.22},
+      "lumen": {"contrast": 1.10, "saturation": 1.10, "brightness": 0.0, "unsharp_amount": 0.46, "unsharp_radius": 5, "highlight_bloom": 0.0},
+      "face": {"enabled": true, "weight": 0.62, "min_face_size": 48, "frame_stride": 4},
+      "chroma": {"contrast": 1.10, "brightness": 0.0, "saturation": 1.16, "gamma": 1.02, "red_shadow": 0.00, "green_shadow": 0.00, "blue_shadow": -0.01, "red_mid": 0.01, "green_mid": 0.00, "blue_mid": -0.01},
+      "temporal": {"strength": 0.0},
+      "motus": {"mode": "cinematic", "motion_blur": 0.0, "frame_blend": 0.0, "speed_ramp": false}
+    },
+    "hdr_imperator": {
+      "description": "HDR spectaculaire inspiré du look public HDR CC, avec hautes lumières contrôlées.",
+      "compositing_preset": "viral_hdr",
+      "restaura": {"denoise_luma": 0.50, "denoise_chroma": 0.42, "unsharp_amount": 0.36, "unsharp_radius": 5},
+      "textura": {"contrast": 1.10, "saturation": 1.10, "unsharp_amount": 0.48, "unsharp_radius": 5, "local_detail": 0.16},
+      "lumen": {"contrast": 1.08, "saturation": 1.08, "brightness": 0.0, "unsharp_amount": 0.38, "unsharp_radius": 5, "highlight_bloom": 0.0},
+      "face": {"enabled": true, "weight": 0.58, "min_face_size": 48, "frame_stride": 4},
+      "chroma": {"contrast": 1.14, "brightness": 0.005, "saturation": 1.20, "gamma": 1.03, "red_shadow": 0.00, "green_shadow": -0.01, "blue_shadow": -0.02, "red_mid": 0.02, "green_mid": 0.00, "blue_mid": -0.01},
+      "temporal": {"strength": 0.0},
+      "motus": {"mode": "cinematic", "motion_blur": 0.0, "frame_blend": 0.0, "speed_ramp": false}
+    },
+    "realistic_aurea": {
+      "description": "Look réaliste à tons chair protégés et contraste naturel.",
+      "compositing_preset": "clean_realistic",
+      "restaura": {"denoise_luma": 0.65, "denoise_chroma": 0.50, "unsharp_amount": 0.30, "unsharp_radius": 5},
+      "textura": {"contrast": 1.06, "saturation": 1.04, "unsharp_amount": 0.38, "unsharp_radius": 5, "local_detail": 0.10},
+      "lumen": {"contrast": 1.05, "saturation": 1.03, "brightness": 0.0, "unsharp_amount": 0.28, "unsharp_radius": 5, "highlight_bloom": 0.0},
+      "face": {"enabled": true, "weight": 0.44, "min_face_size": 48, "frame_stride": 3},
+      "chroma": {"contrast": 1.05, "brightness": 0.0, "saturation": 1.03, "gamma": 1.00, "red_shadow": 0.00, "green_shadow": 0.00, "blue_shadow": 0.00, "red_mid": 0.01, "green_mid": 0.00, "blue_mid": -0.005},
+      "temporal": {"strength": 0.0},
+      "motus": {"mode": "cinematic", "motion_blur": 0.0, "frame_blend": 0.0, "speed_ramp": false}
+    },
+    "old_main_noctis": {
+      "description": "Look sombre et cinématique, noirs renforcés sans écrasement excessif.",
+      "compositing_preset": "dark",
+      "restaura": {"denoise_luma": 0.55, "denoise_chroma": 0.45, "unsharp_amount": 0.34, "unsharp_radius": 5},
+      "textura": {"contrast": 1.10, "saturation": 1.02, "unsharp_amount": 0.44, "unsharp_radius": 5, "local_detail": 0.14},
+      "lumen": {"contrast": 1.08, "saturation": 1.02, "brightness": -0.005, "unsharp_amount": 0.34, "unsharp_radius": 5, "highlight_bloom": 0.0},
+      "face": {"enabled": true, "weight": 0.52, "min_face_size": 48, "frame_stride": 4},
+      "chroma": {"contrast": 1.12, "brightness": -0.005, "saturation": 1.05, "gamma": 0.98, "red_shadow": 0.00, "green_shadow": 0.00, "blue_shadow": 0.02, "red_mid": 0.01, "green_mid": 0.00, "blue_mid": 0.01},
+      "temporal": {"strength": 0.0},
+      "motus": {"mode": "cinematic", "motion_blur": 0.0, "frame_blend": 0.0, "speed_ramp": false}
+    },
+    "viral_imperator": {
+      "description": "Profil expérimental pour édits viraux : impact HDR et fluidité Motus contrôlée.",
+      "compositing_preset": "viral_hdr",
+      "restaura": {"denoise_luma": 0.50, "denoise_chroma": 0.42, "unsharp_amount": 0.34, "unsharp_radius": 5},
+      "textura": {"contrast": 1.10, "saturation": 1.12, "unsharp_amount": 0.44, "unsharp_radius": 5, "local_detail": 0.14},
+      "lumen": {"contrast": 1.08, "saturation": 1.10, "brightness": 0.0, "unsharp_amount": 0.34, "unsharp_radius": 5, "highlight_bloom": 0.0},
+      "face": {"enabled": true, "weight": 0.56, "min_face_size": 48, "frame_stride": 3},
+      "chroma": {"contrast": 1.12, "brightness": 0.002, "saturation": 1.16, "gamma": 1.02, "red_shadow": 0.00, "green_shadow": -0.01, "blue_shadow": -0.01, "red_mid": 0.02, "green_mid": 0.00, "blue_mid": -0.01},
+      "temporal": {"strength": 0.0},
+      "motus": {"mode": "viral", "motion_blur": 0.04, "frame_blend": 0.04, "speed_ramp": false}
+    },
+    "balanced": {
+      "description": "Profil prudent pour les vidéos naturelles.",
+      "compositing_preset": "clean_realistic",
+      "restaura": {"denoise_luma": 0.8, "denoise_chroma": 0.65, "unsharp_amount": 0.30, "unsharp_radius": 5},
+      "textura": {"contrast": 1.08, "saturation": 1.06, "unsharp_amount": 0.40, "unsharp_radius": 5, "local_detail": 0.12},
+      "lumen": {"contrast": 1.08, "saturation": 1.06, "brightness": 0.0, "unsharp_amount": 0.34, "unsharp_radius": 5, "highlight_bloom": 0.0},
+      "face": {"enabled": true, "weight": 0.48, "min_face_size": 64},
+      "chroma": {"contrast": 1.06, "brightness": 0.0, "saturation": 1.04, "gamma": 1.0, "red_shadow": 0.0, "green_shadow": 0.0, "blue_shadow": 0.0, "red_mid": 0.0, "green_mid": 0.0, "blue_mid": 0.0},
+      "temporal": {"strength": 0.0},
+      "motus": {"mode": "cinematic", "motion_blur": 0.0, "frame_blend": 0.0, "speed_ramp": false}
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lacrimae.local/schemas/campaign.schema.json",
+  "title": "LACRIMAE Video Campaign",
+  "type": "object",
+  "required": ["campaign_id", "status", "source", "target", "current_stage", "completed_stages", "artifacts"],
+  "properties": {
+    "campaign_id": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{2,127}$"},
+    "status": {"enum": ["CREATED", "RUNNING", "BLOCKED", "FAILED", "SEALED"]},
+    "source": {
+      "type": "object",
+      "required": ["uri", "sha256", "width", "height", "fps", "duration_seconds", "rotation"],
+      "properties": {
+        "uri": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "fps": {"type": "number", "exclusiveMinimum": 0},
+        "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "rotation": {"type": "integer", "enum": [0, 90, 180, 270]}
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": ["width", "height", "fps", "audio", "profile"],
+      "properties": {
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "fps": {"type": "number", "enum": [60, 120]},
+        "audio": {"enum": ["preserve", "remove"]},
+        "profile": {"enum": ["fast", "balanced", "quality_ultimate"]}
+      }
+    },
+    "current_stage": {"type": "string", "pattern": "^F[0-9]{2}_[A-Z0-9_]+$"},
+    "completed_stages": {"type": "array", "items": {"type": "string"}},
+    "artifacts": {"type": "object", "additionalProperties": {"type": "string"}},
+    "worker_profile": {"type": "string"},
+    "model_manifest_version": {"type": "string"},
+    "created_at": {"type": "string"},
+    "updated_at": {"type": "string"}
+  },
+  "additionalProperties": false
+}

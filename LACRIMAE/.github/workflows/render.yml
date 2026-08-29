@@ -1,0 +1,66 @@
+name: F03 RENDER
+
+on:
+  workflow_dispatch:
+    inputs:
+      f00c_run_id:
+        description: 'Run F00-C validé à utiliser comme source des séquences matérialisées'
+        required: true
+        type: string
+      codex_source:
+        description: 'Codex fourni dans dev4/public/codex.json'
+        required: false
+        default: 'repo'
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - 'F03_PREVIEW/CODEBASE/**'
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: F03_PREVIEW/CODEBASE/package-lock.json
+
+      - name: Install
+        working-directory: F03_PREVIEW/CODEBASE
+        run: npm ci
+
+      - name: Download validated F00-C artifact
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          F00C_RUN_ID: ${{ inputs.f00c_run_id }}
+        run: |
+          test -n "$F00C_RUN_ID"
+          gh run download "$F00C_RUN_ID" \
+            --repo "${{ github.repository }}" \
+            --name "lacrimae-dev4-f00c-$F00C_RUN_ID" \
+            --dir /tmp/f00c-artifact
+          test -f /tmp/f00c-artifact/motion_slow_manifest.json
+          mkdir -p F03_PREVIEW/CODEBASE/public/sequences
+          cp /tmp/f00c-artifact/motion_slow_manifest.json F03_PREVIEW/CODEBASE/public/sequences.json
+          cp /tmp/f00c-artifact/motion_slow_manifest.json F03_PREVIEW/CODEBASE/public/motion_slow_manifest.json
+          cp /tmp/f00c-artifact/sequences/*.mp4 F03_PREVIEW/CODEBASE/public/sequences/
+          test "$(find F03_PREVIEW/CODEBASE/public/sequences -name '*.mp4' | wc -l)" -eq 86
+
+      - name: Render (LacrimaeShort)
+        working-directory: F03_PREVIEW/CODEBASE
+        run: npm run render
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: short_final
+          path: F03_PREVIEW/CODEBASE/out/short_final.mp4
+          retention-days: 14

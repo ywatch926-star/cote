@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "models": [
+    {
+      "id": "rife-4.25-hdv3",
+      "family": "RIFE",
+      "version": "4.25",
+      "variant": "HDv3",
+      "license": "MIT",
+      "source_url": "https://drive.google.com/file/d/1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg/view?usp=sharing",
+      "archive_filename": "rife_4.25.zip",
+      "archive_sha256": "e63d481b7ae5d4a4e6ad7ac5b410ff78f3bf7be3b51b2e38ca8152747abde5b4",
+      "object_key": "models/RIFE/4.25/train_log/flownet.pkl",
+      "sha256": "6615790efd627772917205db291f51cd392528a157ecbb2ecaeec3bff8eb6de2",
+      "destination": "models/RIFE/4.25/train_log/flownet.pkl",
+      "companion_files": [
+        {
+          "object_key": "models/RIFE/4.25/train_log/IFNet_HDv3.py",
+          "sha256": "655b4c772b037967b86c2dd31c8fa3b5323b79dd9a0e0088708d89149bbc8a32",
+          "destination": "models/RIFE/4.25/train_log/IFNet_HDv3.py"
+        },
+        {
+          "object_key": "models/RIFE/4.25/train_log/RIFE_HDv3.py",
+          "sha256": "81bbd0648e499de79e44768d284005d9d57d0f6eb7c30adae407f22675055730",
+          "destination": "models/RIFE/4.25/train_log/RIFE_HDv3.py"
+        },
+        {
+          "object_key": "models/RIFE/4.25/train_log/refine.py",
+          "sha256": "0c5698b4a05b9f6ab551740575c1c35e248e5b1829bab6445186081ebe15f032",
+          "destination": "models/RIFE/4.25/train_log/refine.py"
+        }
+      ],
+      "notes": "RIFE 4.25 est recommandé par Practical-RIFE pour la plupart des scènes. Le manifeste principal pointe le poids et déclare les trois fichiers Python compagnons nécessaires au chargement HDv3."
+    },
+    {
+      "id": "realesrgan-x4plus-0.1.0",
+      "family": "Real-ESRGAN",
+      "version": "0.1.0",
+      "variant": "x4plus",
+      "license": "BSD-3-Clause",
+      "source_url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+      "object_key": "models/RealESRGAN/0.1.0/RealESRGAN_x4plus.pth",
+      "sha256": "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1",
+      "destination": "models/RealESRGAN/0.1.0/RealESRGAN_x4plus.pth",
+      "scale": 4,
+      "output_policy": "outscale_2_for_1080p_to_4k",
+      "notes": "Le modèle x4plus est exécuté avec outscale=2 pour convertir 1920x1080 en 3840x2160 sans dépasser la cible 4K."
+    },
+    {
+      "id": "gfpgan-v1.3",
+      "family": "GFPGAN",
+      "version": "1.3",
+      "variant": "clean",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth",
+      "object_key": "models/GFPGAN/1.3/GFPGANv1.3.pth",
+      "sha256": "c953a88f2727c85c3d9ae72e2bd4846bbaf59fe6972ad94130e23e7017524a70",
+      "destination": "models/GFPGAN/1.3/GFPGANv1.3.pth",
+      "scale": 1,
+      "output_policy": "face_only_native_resolution",
+      "notes": "GFPGAN v1.3 est activé uniquement sur les visages détectés ; il ne remplace pas la restauration générale des textures."
+    }
+  ],
+  "policy": {
+    "require_sha256": true,
+    "require_pinned_version": true,
+    "allow_empty_manifest_in_contract_mode": false
+  },
+  "notes": "Source officielle Practical-RIFE ; les fichiers sont installés dans le Volume Modal lacrimae-dev6-models sous models/RIFE/4.25/train_log/. La publication des mêmes objets dans le stockage indépendant doit précéder un bootstrap sur un nouveau compte Modal."
+}

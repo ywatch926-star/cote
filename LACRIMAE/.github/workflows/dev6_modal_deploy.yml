@@ -1,0 +1,42 @@
+name: LACRIMAE dev6 — Modal infrastructure deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev6]
+    paths:
+      - 'modal/**'
+      - 'ORACLE/worker_registry.json'
+      - '.github/workflows/dev6_modal_deploy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-modal-infrastructure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      LACRIMAE_MODAL_APP: lacrimae-dev6-video
+      LACRIMAE_VIDEO_VOLUME: lacrimae-dev6-video
+      LACRIMAE_MODEL_VOLUME: lacrimae-dev6-models
+      LACRIMAE_GPU: L4
+    steps:
+      - name: Checkout dev6
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Modal CLI
+        run: python -m pip install 'modal>=1.0,<2'
+      - name: Check required secrets without printing them
+        shell: bash
+        run: |
+          test -n "$MODAL_TOKEN_ID" || { echo 'MODAL_TOKEN_ID absent'; exit 1; }
+          test -n "$MODAL_TOKEN_SECRET" || { echo 'MODAL_TOKEN_SECRET absent'; exit 1; }
+          echo 'Modal credentials detected (values hidden).'
+      - name: Create Volumes and deploy worker
+        run: bash modal/deploy_modal.sh

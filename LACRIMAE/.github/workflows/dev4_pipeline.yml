@@ -1,0 +1,266 @@
+name: LACRIMAE dev4 — Virtual Match Cut
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_f01:
+        description: 'Ignorer F01 SELECT (true = utiliser le manifeste de F00)'
+        required: true
+        default: true
+        type: boolean
+      skip_f02:
+        description: 'Ignorer F02 FORMAT (true = générer un codex minimal)'
+        required: true
+        default: true
+        type: boolean
+      skip_f04:
+        description: 'Ignorer F04_RENDER (remplacée par PICTOR)'
+        required: true
+        default: true
+        type: boolean
+      skip_f05:
+        description: 'Ignorer F05 camouflage (debug uniquement)'
+        required: true
+        default: false
+        type: boolean
+      skip_f06:
+        description: 'Ignorer F06 nettoyage final (debug uniquement)'
+        required: true
+        default: false
+        type: boolean
+      target_duration_seconds:
+        description: 'Durée cible du Short'
+        required: true
+        default: '10'
+      cut_interval_frames:
+        description: 'Frames par séquence Fast Match Cut'
+        required: true
+        default: '7'
+      project_title:
+        description: 'Titre de la production'
+        required: true
+        default: 'Lacrimae dev4'
+      champion_approved:
+        description: 'Approbation Champion avant le rendu PICTOR'
+        required: true
+        default: false
+        type: boolean
+      source_url:
+        description: 'URL de la vidéo source f00 à télécharger sur GitHub Actions'
+        required: true
+        default: 'https://github.com/kioka8877-ux/LACRIMAE/releases/download/f00/YTDown.com_YouTube_La-rage-de-Dark-Vador-Rogue-One-Star-War_Media_QXsPNstxLr0_001_1080p.mp4'
+
+permissions:
+  contents: read
+
+jobs:
+  forge:
+    name: F00 → Preview → PICTOR → F05 → F06
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      SKIP_F01: ${{ inputs.skip_f01 }}
+      SKIP_F02: ${{ inputs.skip_f02 }}
+      SKIP_F04: ${{ inputs.skip_f04 }}
+      SKIP_F05: ${{ inputs.skip_f05 }}
+      SKIP_F06: ${{ inputs.skip_f06 }}
+      TARGET_DURATION: ${{ inputs.target_duration_seconds }}
+      CUT_INTERVAL: ${{ inputs.cut_interval_frames }}
+      PROJECT_TITLE: ${{ inputs.project_title }}
+      CHAMPION_APPROVED: ${{ inputs.champion_approved }}
+      SOURCE_URL: ${{ inputs.source_url }}
+    steps:
+      - name: Checkout dev4
+        uses: actions/checkout@v4
+
+      - name: Setup Python et Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: F03_PREVIEW/CODEBASE/package-lock.json
+
+      - name: Installer Python et numpy
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer dépendances Python
+        run: python -m pip install --upgrade pip numpy
+
+      - name: Installer FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Installer PICTOR
+        working-directory: F03_PICTOR/CODEBASE
+        run: npm install --no-audit --no-fund
+
+      - name: Télécharger la source f00 pour GitHub Actions
+        run: |
+          mkdir -p F00_INGEST/IN F00_INGEST/OUT
+          if [ ! -s F00_INGEST/IN/video_source.mp4 ]; then
+            curl -L --fail --retry 3 "$SOURCE_URL" -o F00_INGEST/IN/video_source.mp4
+          fi
+          test -s F00_INGEST/IN/video_source.mp4
+
+      - name: Normaliser la source vidéo pour le rendu
+        run: |
+          mkdir -p F00_INGEST/IN F00_INGEST/OUT
+          test -s F00_INGEST/IN/video_source.mp4
+          ffmpeg -y -i F00_INGEST/IN/video_source.mp4 -map 0:v:0 -c:v libx264 -profile:v main -level 4.1 -pix_fmt yuv420p -an -movflags +faststart /tmp/video_source_dev4.mp4
+          mv /tmp/video_source_dev4.mp4 F00_INGEST/IN/video_source.mp4
+
+      - name: Préparer la demande F00
+        run: |
+          mkdir -p F00_INGEST/IN F00_INGEST/OUT
+          test -s F00_INGEST/IN/video_source.mp4
+          cat > F00_INGEST/IN/production_request.json <<JSON
+          {
+            "project_title": "${PROJECT_TITLE}",
+            "target_duration_seconds": ${TARGET_DURATION},
+            "cut_interval_frames": ${CUT_INTERVAL},
+            "candidate_count": 100,
+            "shuffle_seed": 2026,
+            "short_count": 1
+          }
+          JSON
+
+      - name: F00-A — SCOUT identifier et classer les passages
+        run: |
+          rm -rf F00_INGEST/OUT/scout F00_INGEST/OUT/materialized
+          mkdir -p F00_INGEST/OUT/scout F00_INGEST/OUT/materialized
+          python3 F00_INGEST/CODEBASE/f00_scout.py \
+            --source F00_INGEST/IN/video_source.mp4 \
+            --request F00_INGEST/IN/production_request.json \
+            --out F00_INGEST/OUT/scout
+
+      - name: F00-B — EXTRACT matérialiser et valider avec FFmpeg
+        run: |
+          python3 F00_INGEST/CODEBASE/f00_extract.py \
+            --source F00_INGEST/IN/video_source.mp4 \
+            --plan F00_INGEST/OUT/scout/sequences_plan.json \
+            --out F00_INGEST/OUT/materialized
+          cp F00_INGEST/OUT/materialized/sequences.json F00_INGEST/OUT/sequences.json
+          cp F00_INGEST/OUT/materialized/extract_report.json F00_INGEST/OUT/
+          cp F00_INGEST/OUT/scout/sequences_plan.json F00_INGEST/OUT/
+
+      - name: Valider le manifeste matérialisé F00-B
+        run: python3 tools/validate_dev4_contracts.py --sequences F00_INGEST/OUT/sequences.json
+
+      - name: Skip contrôlé de F01 et F02
+        run: |
+          mkdir -p TRACKING
+          : > TRACKING/dev4_pipeline_state.txt
+          if [ "$SKIP_F01" = "true" ]; then
+            echo 'F01: skipped_by_input_manifest' | tee -a TRACKING/dev4_pipeline_state.txt
+          else
+            test -s F01_SELECT/OUT/cutlist.json || { echo 'F01 non ignoré mais cutlist.json absent'; exit 1; }
+            echo 'F01: reused_existing_cutlist' | tee -a TRACKING/dev4_pipeline_state.txt
+          fi
+          if [ "$SKIP_F02" = "true" ]; then
+            echo 'F02: skipped_by_input_manifest' | tee -a TRACKING/dev4_pipeline_state.txt
+          else
+            test -s F02_FORMAT/OUT/codex.json || { echo 'F02 non ignoré mais codex.json absent'; exit 1; }
+            echo 'F02: reused_existing_codex' | tee -a TRACKING/dev4_pipeline_state.txt
+          fi
+          if [ "$SKIP_F04" = "true" ]; then
+            echo 'F04: skipped_by_design_pictor_replacement' | tee -a TRACKING/dev4_pipeline_state.txt
+          else
+            echo 'F04 is outside dev4 scope: PICTOR already produces the final MP4' >&2
+            exit 1
+          fi
+
+      - name: Préparer l’entrée commune preview / PICTOR
+        run: |
+          mkdir -p F03_PREVIEW/CODEBASE/public F03_PICTOR/CODEBASE/src/data F03_PICTOR/CODEBASE/public
+          cp F00_INGEST/IN/video_source.mp4 F03_PREVIEW/CODEBASE/public/video_source.mp4
+          cp F00_INGEST/IN/video_source.mp4 F03_PICTOR/CODEBASE/public/video_source.mp4
+          cp F00_INGEST/OUT/sequences.json F03_PREVIEW/CODEBASE/public/sequences.json
+          cp F00_INGEST/OUT/sequences.json F03_PICTOR/CODEBASE/src/data/sequences.json
+          rm -rf F03_PREVIEW/CODEBASE/public/sequences F03_PICTOR/CODEBASE/public/sequences
+          cp -R F00_INGEST/OUT/materialized/sequences F03_PREVIEW/CODEBASE/public/sequences
+          cp -R F00_INGEST/OUT/materialized/sequences F03_PICTOR/CODEBASE/public/sequences
+          cp F03_PREVIEW/CODEBASE/src/preview/OmniComposition.jsx F03_PICTOR/CODEBASE/src/OmniComposition.jsx
+          cp F03_PREVIEW/CODEBASE/src/preview/virtualSequences.js F03_PICTOR/CODEBASE/src/virtualSequences.js
+          cp F03_PREVIEW/CODEBASE/src/preview/compositionConfig.js F03_PICTOR/CODEBASE/src/compositionConfig.js
+          if [ "$SKIP_F02" = "true" ]; then
+            cp F03_PREVIEW/CODEBASE/public/codex.json F03_PICTOR/CODEBASE/src/data/codex.json
+          else
+            cp F02_FORMAT/OUT/codex.json F03_PREVIEW/CODEBASE/public/codex.json
+            cp F02_FORMAT/OUT/codex.json F03_PICTOR/CODEBASE/src/data/codex.json
+          fi
+          if [ -d F03_PREVIEW/CODEBASE/public/backgrounds ]; then cp -R F03_PREVIEW/CODEBASE/public/backgrounds F03_PICTOR/CODEBASE/public/; fi
+          if [ -f F03_PREVIEW/CODEBASE/public/logo.png ]; then cp F03_PREVIEW/CODEBASE/public/logo.png F03_PICTOR/CODEBASE/public/logo.png; fi
+          python3 - <<'PY'
+          import json
+          p='F03_PREVIEW/CODEBASE/public/codex.json'
+          d=json.load(open(p, encoding='utf-8'))
+          clip=(d.get('clips') or [d])[0]
+          clip.setdefault('video', {})['source']='video_source.mp4'
+          clip['video']['fps']=json.load(open('F00_INGEST/OUT/sequences.json'))['fps']
+          clip['video']['total_frames']=json.load(open('F00_INGEST/OUT/sequences.json'))['total_frames']
+          d['clips']=[clip]
+          open(p,'w',encoding='utf-8').write(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+          open('F03_PICTOR/CODEBASE/src/data/codex.json','w',encoding='utf-8').write(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+          PY
+
+      - name: Construire la preview
+        working-directory: F03_PREVIEW/CODEBASE
+        run: npm ci && npm run build
+
+      - name: Valider le contrat commun preview / PICTOR
+        run: python3 tools/validate_dev4_contracts.py --sequences F00_INGEST/OUT/sequences.json --codex F03_PICTOR/CODEBASE/src/data/codex.json
+
+      - name: Gate Champion — autoriser le rendu final
+        run: |
+          if [ "$CHAMPION_APPROVED" != "true" ]; then
+            echo 'Champion approval required: set champion_approved=true after reviewing F03 Preview.' >&2
+            exit 1
+          fi
+          echo 'Champion: approved' | tee -a TRACKING/dev4_pipeline_state.txt
+
+      - name: Rendre PICTOR avec les mêmes données
+        working-directory: F03_PICTOR/CODEBASE
+        run: npm run render
+
+      - name: F05 — camouflage et rapport QA
+        run: |
+          mkdir -p F05_CAMOUFLAGE/IN F05_CAMOUFLAGE/OUT F06_LUTHER/IN F06_LUTHER/OUT
+          cp F03_PICTOR/CODEBASE/out/short_final.mp4 F05_CAMOUFLAGE/IN/short_final.mp4
+          if [ "$SKIP_F05" = "true" ]; then
+            echo 'F05: skipped_by_request' | tee -a TRACKING/dev4_pipeline_state.txt
+            cp F05_CAMOUFLAGE/IN/short_final.mp4 F05_CAMOUFLAGE/OUT/short_camouflaged.mp4
+          else
+            python3 F05_CAMOUFLAGE/CODEBASE/lac_f05_camouflage.py \
+              --input F05_CAMOUFLAGE/IN/short_final.mp4 \
+              --output F05_CAMOUFLAGE/OUT
+            echo 'F05: completed' | tee -a TRACKING/dev4_pipeline_state.txt
+          fi
+
+      - name: F06 — nettoyage final et scellement
+        run: |
+          cp F05_CAMOUFLAGE/OUT/short_camouflaged.mp4 F06_LUTHER/IN/short_camouflaged.mp4
+          if [ "$SKIP_F06" = "true" ]; then
+            echo 'F06: skipped_by_request' | tee -a TRACKING/dev4_pipeline_state.txt
+            cp F06_LUTHER/IN/short_camouflaged.mp4 F06_LUTHER/OUT/short_master.mp4
+          else
+            python3 F06_LUTHER/CODEBASE/lac_f06_luther.py \
+              --input F06_LUTHER/IN/short_camouflaged.mp4 \
+              --output F06_LUTHER/OUT
+            echo 'F06: completed' | tee -a TRACKING/dev4_pipeline_state.txt
+          fi
+
+      - name: Publier les artifacts dev4
+        uses: actions/upload-artifact@v4
+        with:
+          name: lacrimae-dev4-${{ github.run_id }}
+          path: |
+            F00_INGEST/OUT/
+            F03_PREVIEW/CODEBASE/dist/
+            F03_PREVIEW/CODEBASE/public/sequences/
+            F03_PICTOR/CODEBASE/out/short_final.mp4
+            F05_CAMOUFLAGE/OUT/
+            F06_LUTHER/OUT/
+            TRACKING/dev4_pipeline_state.txt
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,120 @@
+===== snaptik_7541881597415492871_v3.mp4 =====
+{
+    "programs": [
+
+    ],
+    "streams": [
+        {
+            "index": 0,
+            "codec_name": "aac",
+            "profile": "HE-AACv2",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "bit_rate": "32488",
+            "nb_frames": "326"
+        },
+        {
+            "index": 1,
+            "codec_name": "h264",
+            "profile": "High",
+            "codec_type": "video",
+            "width": 720,
+            "height": 1280,
+            "pix_fmt": "yuv420p",
+            "color_transfer": "iec61966-2-1",
+            "r_frame_rate": "30/1",
+            "avg_frame_rate": "30/1",
+            "bit_rate": "2348766",
+            "nb_frames": "898"
+        }
+    ],
+    "format": {
+        "filename": "/home/ubuntu/upload/snaptik_7541881597415492871_v3.mp4",
+        "duration": "29.933333",
+        "size": "8929926",
+        "bit_rate": "2386617"
+    }
+}
+===== snaptik_7673869593173134600_v3.mp4 =====
+{
+    "programs": [
+
+    ],
+    "streams": [
+        {
+            "index": 0,
+            "codec_name": "h264",
+            "profile": "High",
+            "codec_type": "video",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "color_space": "bt709",
+            "color_transfer": "bt709",
+            "r_frame_rate": "60/1",
+            "avg_frame_rate": "60/1",
+            "bit_rate": "20906434",
+            "nb_frames": "899"
+        },
+        {
+            "index": 1,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 2,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "bit_rate": "348111",
+            "nb_frames": "703"
+        }
+    ],
+    "format": {
+        "filename": "/home/ubuntu/upload/snaptik_7673869593173134600_v3.mp4",
+        "duration": "14.997333",
+        "size": "39859427",
+        "bit_rate": "21262141"
+    }
+}
+===== snaptik_7677576050712300818_v3.mp4 =====
+{
+    "programs": [
+
+    ],
+    "streams": [
+        {
+            "index": 0,
+            "codec_name": "h264",
+            "profile": "High",
+            "codec_type": "video",
+            "width": 720,
+            "height": 866,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "60/1",
+            "avg_frame_rate": "60/1",
+            "bit_rate": "4167563",
+            "nb_frames": "789"
+        },
+        {
+            "index": 1,
+            "codec_name": "aac",
+            "profile": "LC",
+            "codec_type": "audio",
+            "sample_rate": "44100",
+            "channels": 2,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "bit_rate": "128618",
+            "nb_frames": "569"
+        }
+    ],
+    "format": {
+        "filename": "/home/ubuntu/upload/snaptik_7677576050712300818_v3.mp4",
+        "duration": "13.162653",
+        "size": "7084078",
+        "bit_rate": "4305562"
+    }
+}

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LACRIMAE — VISIO Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;1,400;1,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --bg2: #111118;
+      --border: #2a2a3a;
+      --gold: #c9a84c;
+      --gold2: #e8c96a;
+      --white: #f0ede6;
+      --red: #8b1a1a;
+      --dim: #666680;
+      --strong: #e8c96a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────────────────── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--bg2);
+    }
+    header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 18px;
+      color: var(--gold);
+      letter-spacing: 0.2em;
+    }
+    header .subtitle { color: var(--dim); font-size: 11px; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--dim); flex-shrink: 0;
+    }
+    .status-dot.ok { background: #4caf50; }
+
+    /* ── LAYOUT ──────────────────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px 340px;
+      gap: 0;
+      height: calc(100vh - 56px);
+    }
+
+    /* ── PREVIEW PHONE ───────────────────────────────────────────────── */
+    .preview-col {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 16px;
+      background: var(--bg);
+    }
+    .phone-frame {
+      width: 180px;
+      height: 320px;
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      background: #000;
+      flex-shrink: 0;
+    }
+    .phone-bg {
+      position: absolute; inset: 0;
+      background-size: cover;
+      background-position: center;
+    }
+    .phone-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.35);
+    }
+    .phone-grain {
+      position: absolute; inset: 0;
+      opacity: 0.3;
+      mix-blend-mode: screen;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .phone-subtitle {
+      position: absolute;
+      bottom: 40px; left: 0; right: 0;
+      text-align: center;
+      padding: 0 12px;
+    }
+    .phone-word {
+      display: inline-block;
+      font-family: 'Cinzel', serif;
+      font-size: 14px;
+      color: #fff;
+      text-shadow: 0px 2px 8px rgba(0,0,0,0.9);
+      letter-spacing: 0.1em;
+      animation: fadeIn 0.15s ease;
+    }
+    .phone-word.strong {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      color: var(--strong);
+      font-size: 16px;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; } }
+
+    .preview-controls {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--white);
+      padding: 6px 12px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      transition: border-color 0.2s;
+    }
+    .btn:hover { border-color: var(--gold); color: var(--gold); }
+    .btn.primary { background: var(--gold); color: #000; border-color: var(--gold); font-weight: bold; }
+    .btn.primary:hover { background: var(--gold2); }
+    .btn.danger { border-color: var(--red); color: var(--red); }
+
+    .scrubber { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; max-width: 220px; }
+    .scrubber input[type=range] { width: 100%; accent-color: var(--gold); }
+    .scrubber label { color: var(--dim); font-size: 10px; }
+
+    /* ── TIMELINE ────────────────────────────────────────────────────── */
+    .timeline-col {
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px;
+      background: var(--bg2);
+    }
+    .col-title {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      color: var(--gold);
+      letter-spacing: 0.2em;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .word-list { display: flex; flex-direction: column; gap: 2px; }
+    .word-item {
+      display: grid;
+      grid-template-columns: 1fr 60px 60px 40px;
+      gap: 4px;
+      padding: 4px 6px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 0.1s;
+      font-size: 11px;
+      align-items: center;
+    }
+    .word-item:hover { background: rgba(201,168,76,0.08); }
+    .word-item.active { background: rgba(201,168,76,0.15); }
+    .word-item .w-text { color: var(--white); }
+    .word-item .w-text.strong { color: var(--strong); font-style: italic; }
+    .word-item .w-time { color: var(--dim); font-size: 10px; text-align: right; }
+    .word-item .w-strong { color: var(--strong); font-size: 10px; text-align: center; }
+    .stats-bar {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      padding: 10px;
+      background: rgba(201,168,76,0.05);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 12px;
+      font-size: 10px;
+    }
+    .stat { display: flex; flex-direction: column; }
+    .stat .label { color: var(--dim); }
+    .stat .value { color: var(--gold); font-weight: bold; }
+
+    /* ── CONFIG ──────────────────────────────────────────────────────── */
+    .config-col { overflow-y: auto; padding: 16px; background: var(--bg); }
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block; color: var(--dim);
+      font-size: 10px; letter-spacing: 0.1em;
+      margin-bottom: 4px; text-transform: uppercase;
+    }
+    .form-group input[type=text],
+    .form-group input[type=number],
+    .form-group select {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--white);
+      padding: 6px 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+    .form-group input[type=range] { width: 100%; accent-color: var(--gold); }
+    .range-val { color: var(--gold); font-size: 11px; }
+    .section-divider {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      color: var(--gold);
+      letter-spacing: 0.15em;
+      margin: 16px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .save-zone { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+    .msg { padding: 8px 10px; border-radius: 3px; font-size: 11px; display: none; }
+    .msg.ok { background: rgba(76,175,80,0.15); border: 1px solid #4caf50; color: #4caf50; display: block; }
+    .msg.err { background: rgba(139,26,26,0.2); border: 1px solid var(--red); color: #ff6b6b; display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="status-dot" id="statusDot"></div>
+  <h1>LACRIMAE — VISIO</h1>
+  <span class="subtitle">F02 · Preview &amp; Validation</span>
+  <span class="subtitle" id="audioInfo" style="margin-left:auto;color:var(--gold)"></span>
+</header>
+
+<div class="main-grid">
+
+  <!-- PREVIEW -->
+  <div class="preview-col">
+    <div class="phone-frame" id="phoneFrame">
+      <div class="phone-bg" id="phoneBg"></div>
+      <div class="phone-overlay" id="phoneOverlay"></div>
+      <div class="phone-grain"></div>
+      <div class="phone-subtitle">
+        <span class="phone-word" id="previewWord">—</span>
+      </div>
+    </div>
+    <div class="preview-controls">
+      <button class="btn" id="btnPlay" onclick="togglePlay()">▶ PLAY</button>
+      <button class="btn" onclick="prevWord()">◀</button>
+      <button class="btn" onclick="nextWord()">▶</button>
+    </div>
+    <div class="scrubber">
+      <input type="range" id="scrubber" min="0" value="0" oninput="onScrub(this.value)"/>
+      <label id="scrubLabel">Frame 0 / 0</label>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="timeline-col">
+    <div class="col-title">TIMELINE — MOT PAR MOT</div>
+    <div class="stats-bar" id="statsBar">
+      <div class="stat"><span class="label">durée</span><span class="value" id="statDuree">—</span></div>
+      <div class="stat"><span class="label">frames</span><span class="value" id="statFrames">—</span></div>
+      <div class="stat"><span class="label">mots</span><span class="value" id="statMots">—</span></div>
+      <div class="stat"><span class="label">forts</span><span class="value" id="statForts">—</span></div>
+    </div>
+    <div class="word-list" id="wordList"></div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="config-col">
+    <div class="col-title">CREATIVE CONFIG</div>
+
+    <div class="section-divider">TIMING</div>
+    <div class="form-group">
+      <label>Cut interval (frames)</label>
+      <input type="number" id="cfgCut" min="4" max="15" value="7"/>
+    </div>
+    <div class="form-group">
+      <label>Ordre images</label>
+      <select id="cfgOrder">
+        <option value="sequential">Séquentiel</option>
+        <option value="random">Aléatoire</option>
+        <option value="loop">Boucle</option>
+      </select>
+    </div>
+
+    <div class="section-divider">TYPOGRAPHIE</div>
+    <div class="form-group">
+      <label>Font principale</label>
+      <input type="text" id="cfgFontMain" value="Cinzel"/>
+    </div>
+    <div class="form-group">
+      <label>Font mots forts</label>
+      <input type="text" id="cfgFontStrong" value="Playfair Display"/>
+    </div>
+    <div class="form-group">
+      <label>Letter spacing</label>
+      <input type="text" id="cfgLetterSpacing" value="0.12em"/>
+    </div>
+
+    <div class="section-divider">ESTHÉTIQUE</div>
+    <div class="form-group">
+      <label>Grain opacity — <span class="range-val" id="grainVal">0.30</span></label>
+      <input type="range" id="cfgGrain" min="0" max="0.6" step="0.01" value="0.30"
+             oninput="document.getElementById('grainVal').textContent=parseFloat(this.value).toFixed(2); applyFilters()"/>
+    </div>
+    <div class="form-group">
+      <label>Contrast — <span class="range-val" id="contrastVal">1.20</span></label>
+      <input type="range" id="cfgContrast" min="0.8" max="1.6" step="0.01" value="1.20"
+             oninput="document.getElementById('contrastVal').textContent=parseFloat(this.value).toFixed(2); applyFilters()"/>
+    </div>
+    <div class="form-group">
+      <label>Brightness — <span class="range-val" id="brightnessVal">0.88</span></label>
+      <input type="range" id="cfgBrightness" min="0.5" max="1.2" step="0.01" value="0.88"
+             oninput="document.getElementById('brightnessVal').textContent=parseFloat(this.value).toFixed(2); applyFilters()"/>
+    </div>
+    <div class="form-group">
+      <label>Sepia — <span class="range-val" id="sepiaVal">0.15</span></label>
+      <input type="range" id="cfgSepia" min="0" max="0.6" step="0.01" value="0.15"
+             oninput="document.getElementById('sepiaVal').textContent=parseFloat(this.value).toFixed(2); applyFilters()"/>
+    </div>
+
+    <div class="save-zone">
+      <div id="msgSave" class="msg"></div>
+      <button class="btn primary" onclick="saveConfig()">SCELLER LA CONFIG</button>
+      <button class="btn" onclick="resetConfig()">Réinitialiser</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let timing = null;
+let images = [];
+let currentWordIdx = 0;
+let currentFrame = 0;
+let playing = false;
+let playInterval = null;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const [tRes, iRes, cRes] = await Promise.all([
+      fetch('/api/timing'), fetch('/api/images'), fetch('/api/config')
+    ]);
+    timing = await tRes.json();
+    const imgData = await iRes.json();
+    images = imgData.images || [];
+    const config = await cRes.json();
+
+    document.getElementById('statusDot').classList.add('ok');
+    document.getElementById('audioInfo').textContent =
+      `${timing.audio_duration_s}s · ${timing.total_frames} frames · ${images.length} images`;
+
+    document.getElementById('statDuree').textContent = timing.audio_duration_s + 's';
+    document.getElementById('statFrames').textContent = timing.total_frames;
+    document.getElementById('statMots').textContent = timing.words.length;
+    document.getElementById('statForts').textContent = timing.words.filter(w => w.is_strong).length;
+
+    const scrubber = document.getElementById('scrubber');
+    scrubber.max = timing.total_frames;
+    document.getElementById('scrubLabel').textContent = `Frame 0 / ${timing.total_frames}`;
+
+    renderWordList();
+    loadConfig(config);
+    goToWord(0);
+  } catch (e) {
+    console.error('Init error:', e);
+  }
+}
+
+// ── WORD LIST ─────────────────────────────────────────────────────────────────
+function renderWordList() {
+  const container = document.getElementById('wordList');
+  container.innerHTML = timing.words.map((w, i) => `
+    <div class="word-item" id="wi-${i}" onclick="goToWord(${i})">
+      <span class="w-text ${w.is_strong ? 'strong' : ''}">${w.word}</span>
+      <span class="w-time">${w.start_s.toFixed(2)}s</span>
+      <span class="w-time">${w.start_frame}f</span>
+      <span class="w-strong">${w.is_strong ? '★' : ''}</span>
+    </div>
+  `).join('');
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function goToWord(idx) {
+  if (!timing || idx < 0 || idx >= timing.words.length) return;
+
+  // Remove previous active
+  const prev = document.querySelector('.word-item.active');
+  if (prev) prev.classList.remove('active');
+
+  currentWordIdx = idx;
+  const w = timing.words[idx];
+  currentFrame = w.start_frame;
+
+  document.getElementById(`wi-${idx}`).classList.add('active');
+  document.getElementById(`wi-${idx}`).scrollIntoView({ block: 'nearest' });
+
+  updatePreview(w);
+  updateScrubber();
+}
+
+function updatePreview(word) {
+  const wordEl = document.getElementById('previewWord');
+  wordEl.textContent = word.word;
+  wordEl.className = 'phone-word' + (word.is_strong ? ' strong' : '');
+
+  // Image correspondante au cut interval
+  const cutInterval = parseInt(document.getElementById('cfgCut').value) || 7;
+  const imgIdx = Math.floor(word.start_frame / cutInterval) % Math.max(images.length, 1);
+  if (images.length > 0) {
+    document.getElementById('phoneBg').style.backgroundImage =
+      `url('/api/image/${images[imgIdx]}')`;
+  }
+
+  applyFilters();
+}
+
+function updateScrubber() {
+  if (!timing) return;
+  document.getElementById('scrubber').value = currentFrame;
+  document.getElementById('scrubLabel').textContent = `Frame ${currentFrame} / ${timing.total_frames}`;
+}
+
+function onScrub(val) {
+  currentFrame = parseInt(val);
+  if (!timing) return;
+  // Trouver le mot correspondant au frame
+  let found = timing.words.length - 1;
+  for (let i = 0; i < timing.words.length; i++) {
+    if (timing.words[i].start_frame > currentFrame) { found = Math.max(0, i - 1); break; }
+  }
+  goToWord(found);
+}
+
+function nextWord() {
+  if (timing && currentWordIdx < timing.words.length - 1) goToWord(currentWordIdx + 1);
+}
+function prevWord() {
+  if (currentWordIdx > 0) goToWord(currentWordIdx - 1);
+}
+
+function togglePlay() {
+  playing = !playing;
+  document.getElementById('btnPlay').textContent = playing ? '⏸ PAUSE' : '▶ PLAY';
+  if (playing) {
+    playInterval = setInterval(() => {
+      if (currentWordIdx >= timing.words.length - 1) {
+        togglePlay(); return;
+      }
+      nextWord();
+    }, 200);
+  } else {
+    clearInterval(playInterval);
+  }
+}
+
+// ── FILTRES CSS ───────────────────────────────────────────────────────────────
+function applyFilters() {
+  const contrast   = parseFloat(document.getElementById('cfgContrast').value);
+  const brightness = parseFloat(document.getElementById('cfgBrightness').value);
+  const sepia      = parseFloat(document.getElementById('cfgSepia').value);
+  const overlay    = document.getElementById('phoneOverlay');
+  overlay.style.filter = `contrast(${contrast}) brightness(${brightness}) sepia(${sepia})`;
+}
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+function loadConfig(cfg) {
+  if (!cfg) return;
+  if (cfg.cut_interval_frames) document.getElementById('cfgCut').value = cfg.cut_interval_frames;
+  if (cfg.image_order) document.getElementById('cfgOrder').value = cfg.image_order;
+  if (cfg.font_main) document.getElementById('cfgFontMain').value = cfg.font_main;
+  if (cfg.font_strong) document.getElementById('cfgFontStrong').value = cfg.font_strong;
+  if (cfg.letter_spacing) document.getElementById('cfgLetterSpacing').value = cfg.letter_spacing;
+  if (cfg.grain_overlay_opacity !== undefined) {
+    document.getElementById('cfgGrain').value = cfg.grain_overlay_opacity;
+    document.getElementById('grainVal').textContent = cfg.grain_overlay_opacity.toFixed(2);
+  }
+  const filters = cfg.css_filters || '';
+  const cm = filters.match(/contrast\(([^)]+)\)/);
+  const bm = filters.match(/brightness\(([^)]+)\)/);
+  const sm = filters.match(/sepia\(([^)]+)\)/);
+  if (cm) { document.getElementById('cfgContrast').value = cm[1]; document.getElementById('contrastVal').textContent = parseFloat(cm[1]).toFixed(2); }
+  if (bm) { document.getElementById('cfgBrightness').value = bm[1]; document.getElementById('brightnessVal').textContent = parseFloat(bm[1]).toFixed(2); }
+  if (sm) { document.getElementById('cfgSepia').value = sm[1]; document.getElementById('sepiaVal').textContent = parseFloat(sm[1]).toFixed(2); }
+  applyFilters();
+}
+
+function getConfigFromForm() {
+  const contrast   = parseFloat(document.getElementById('cfgContrast').value);
+  const brightness = parseFloat(document.getElementById('cfgBrightness').value);
+  const sepia      = parseFloat(document.getElementById('cfgSepia').value);
+  return {
+    fps: 30,
+    resolution: { width: 1080, height: 1920 },
+    cut_interval_frames: parseInt(document.getElementById('cfgCut').value),
+    image_order: document.getElementById('cfgOrder').value,
+    font_main: document.getElementById('cfgFontMain').value,
+    font_strong: document.getElementById('cfgFontStrong').value,
+    text_color: '#FFFFFF',
+    text_shadow: '0px 4px 12px rgba(0,0,0,0.9)',
+    letter_spacing: document.getElementById('cfgLetterSpacing').value,
+    grain_overlay_opacity: parseFloat(document.getElementById('cfgGrain').value),
+    css_filters: `contrast(${contrast}) brightness(${brightness}) sepia(${sepia})`,
+    blend_mode: 'screen',
+    word_animation: 'fade',
+    validated_by_magos: true,
+  };
+}
+
+async function saveConfig() {
+  const cfg = getConfigFromForm();
+  const msg = document.getElementById('msgSave');
+  try {
+    const res = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      msg.className = 'msg ok';
+      msg.textContent = '✓ creative_config.json scellé — Transit autorisé vers F03.';
+    } else {
+      msg.className = 'msg err';
+      msg.textContent = 'Erreur : ' + JSON.stringify(data);
+    }
+  } catch (e) {
+    msg.className = 'msg err';
+    msg.textContent = 'Erreur réseau : ' + e.message;
+  }
+}
+
+function resetConfig() {
+  loadConfig({
+    cut_interval_frames: 7, image_order: 'sequential',
+    font_main: 'Cinzel', font_strong: 'Playfair Display',
+    letter_spacing: '0.12em', grain_overlay_opacity: 0.30,
+    css_filters: 'contrast(1.2) brightness(0.88) sepia(0.15)',
+  });
+  document.getElementById('msgSave').className = 'msg';
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

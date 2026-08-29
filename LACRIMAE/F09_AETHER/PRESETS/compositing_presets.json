@@ -1,0 +1,310 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Presets de compositing multicouche pour F09 AETHER COMPOSITUM. Chaque preset reproduit la logique After Effects (cc2.ffx) via des filtres FFmpeg déterministes.",
+  "mapping_reference": {
+    "ADBE Sharpen": "unsharp",
+    "ADBE Unsharp Mask2": "unsharp (paramètres séparés)",
+    "MB LookSuite3 / Magic Bullet Looks": "curves + colorbalance + eq",
+    "S_Gradient": "gradients via overlay ou drawbox",
+    "Compositing Options": "chaîne de filtres avec opacité contrôlée"
+  },
+  "presets": {
+    "clean_realistic": {
+      "description": "Effet minimal, priorité au naturel. Détail préservé, contraste doux, aucun artefact visible.",
+      "layers": [
+        {
+          "id": "detail_unsharp",
+          "effect": "ADBE Unsharp Mask2",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.30:5:5:0",
+          "notes": "Netteté légère pour révéler le détail existant sans créner"
+        },
+        {
+          "id": "curves_s",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.7,
+          "ffmpeg_filter": "curves=preset=lighter",
+          "notes": "S-curve très douce pour un contraste naturel"
+        },
+        {
+          "id": "contrast_eq",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "eq=contrast=1.04:brightness=0.005:saturation=1.02:gamma=1.01",
+          "notes": "Micro-ajustement global — quasi invisible mais corrige la platitude"
+        },
+        {
+          "id": "color_balance",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.5,
+          "ffmpeg_filter": "colorbalance=rs=0.01:gs=0.0:bs=-0.01:rm=0.005:gm=0.0:bm=-0.005",
+          "notes": "Teinte légèrement chaude dans les ombres, froide dans les hautes lumières"
+        },
+        {
+          "id": "grain_texture",
+          "effect": "Custom",
+          "enabled": true,
+          "opacity": 0.3,
+          "ffmpeg_filter": "noise=c0s=3:c0f=t+u,format=yuv420p",
+          "notes": "Grain film très léger pour la texture organique"
+        }
+      ],
+      "global": {
+        "output_codec": "libx264",
+        "preset": "slow",
+        "crf": 18,
+        "pix_fmt": "yuv420p",
+        "movflags": "+faststart",
+        "audio_policy": "copy"
+      }
+    },
+    "silver_gray": {
+      "description": "Désaturation contrôlée, contraste métallique, hautes lumières froides et noirs lisibles.",
+      "layers": [
+        {
+          "id": "detail_unsharp",
+          "effect": "ADBE Unsharp Mask2",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.42:5:5:0",
+          "notes": "Netteté modérée pour accentuer la texture métallique"
+        },
+        {
+          "id": "desaturate",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "eq=saturation=0.55",
+          "notes": "Désaturation forte mais pas monochrome"
+        },
+        {
+          "id": "curves_metal",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.85,
+          "ffmpeg_filter": "curves=m='0/0 0.2/0.15 0.5/0.52 0.8/0.88 1/1'",
+          "notes": "S-curve métallique — ombres remontées légèrement, hautes lumières pincées"
+        },
+        {
+          "id": "contrast_eq",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "eq=contrast=1.08:brightness=-0.01:saturation=0.55:gamma=0.98",
+          "notes": "Contraste renforcé, température froide"
+        },
+        {
+          "id": "color_balance",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.7,
+          "ffmpeg_filter": "colorbalance=rs=-0.02:gs=0.0:bs=0.03:rm=-0.01:gm=0.0:bm=0.02",
+          "notes": "Tons froids dans les ombres et les midtones"
+        },
+        {
+          "id": "grain_texture",
+          "effect": "Custom",
+          "enabled": true,
+          "opacity": 0.4,
+          "ffmpeg_filter": "noise=c0s=5:c0f=t+u,format=yuv420p",
+          "notes": "Grain plus prononcé pour renforcer l'aspect argentique"
+        }
+      ],
+      "global": {
+        "output_codec": "libx264",
+        "preset": "slow",
+        "crf": 18,
+        "pix_fmt": "yuv420p",
+        "movflags": "+faststart",
+        "audio_policy": "copy"
+      }
+    },
+    "dark": {
+      "description": "Contraste cinématique et teinte sombre sans écraser la texture des vêtements.",
+      "layers": [
+        {
+          "id": "detail_unsharp",
+          "effect": "ADBE Unsharp Mask2",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.38:5:5:0",
+          "notes": "Netteté présente mais contrôlée"
+        },
+        {
+          "id": "curves_cinematic",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.9,
+          "ffmpeg_filter": "curves=m='0/0 0.1/0.05 0.5/0.45 0.85/0.9 1/1'",
+          "notes": "S-curve cinématique — noirs profonds mais pas bouchés"
+        },
+        {
+          "id": "contrast_eq",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "eq=contrast=1.10:brightness=-0.015:saturation=0.95:gamma=0.96",
+          "notes": "Contraste fort, luminosité baissée, saturation légèrement réduite"
+        },
+        {
+          "id": "color_balance",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.6,
+          "ffmpeg_filter": "colorbalance=rs=-0.01:gs=0.0:bs=0.02:rm=0.01:gm=0.0:bm=-0.01",
+          "notes": "Teinte chaude dans les ombres pour la profondeur"
+        },
+        {
+          "id": "shadow_lift",
+          "effect": "S_Gradient",
+          "enabled": true,
+          "opacity": 0.3,
+          "ffmpeg_filter": "curves=m='0/0.02 0.1/0.06 0.5/0.48 1/0.97'",
+          "notes": "Lift très subtil dans les noirs pour garder la lisibilité des textures"
+        },
+        {
+          "id": "grain_texture",
+          "effect": "Custom",
+          "enabled": true,
+          "opacity": 0.35,
+          "ffmpeg_filter": "noise=c0s=4:c0f=t+u,format=yuv420p",
+          "notes": "Grain cinématique léger"
+        }
+      ],
+      "global": {
+        "output_codec": "libx264",
+        "preset": "slow",
+        "crf": 18,
+        "pix_fmt": "yuv420p",
+        "movflags": "+faststart",
+        "audio_policy": "copy"
+      }
+    },
+    "warm": {
+      "description": "Tons chair protégés, hautes lumières chaudes et saturation sélective.",
+      "layers": [
+        {
+          "id": "detail_unsharp",
+          "effect": "ADBE Unsharp Mask2",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.34:5:5:0",
+          "notes": "Netteté douce pour préserver la douceur des tons chair"
+        },
+        {
+          "id": "curves_warm",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.8,
+          "ffmpeg_filter": "curves=m='0/0 0.15/0.16 0.5/0.53 0.85/0.88 1/1'",
+          "notes": "Lift subtil dans les shadows pour protéger les tons chair"
+        },
+        {
+          "id": "contrast_eq",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "eq=contrast=1.06:brightness=0.008:saturation=1.08:gamma=1.02",
+          "notes": "Saturation légèrement accrue, gamma doux pour la chaleur"
+        },
+        {
+          "id": "color_balance",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.8,
+          "ffmpeg_filter": "colorbalance=rs=0.02:gs=0.005:bs=-0.02:rm=0.03:gm=0.01:bm=-0.02",
+          "notes": "Chaleur dans les ombres et les midtones"
+        },
+        {
+          "id": "skin_protection",
+          "effect": "Custom",
+          "enabled": true,
+          "opacity": 0.4,
+          "ffmpeg_filter": "eq=saturation=1.04:gamma=1.01",
+          "notes": "Protection supplémentaire des tons chair via gamma lift"
+        },
+        {
+          "id": "grain_texture",
+          "effect": "Custom",
+          "enabled": true,
+          "opacity": 0.25,
+          "ffmpeg_filter": "noise=c0s=3:c0f=t+u,format=yuv420p",
+          "notes": "Grain très subtil pour garder le naturel"
+        }
+      ],
+      "global": {
+        "output_codec": "libx264",
+        "preset": "slow",
+        "crf": 18,
+        "pix_fmt": "yuv420p",
+        "movflags": "+faststart",
+        "audio_policy": "copy"
+      }
+    },
+    "viral_hdr": {
+      "description": "Overlay lumineux, contraste plus fort, glow limité et énergie accrue.",
+      "layers": [
+        {
+          "id": "detail_unsharp",
+          "effect": "ADBE Sharpen",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "unsharp=5:5:0.48:5:5:0",
+          "notes": "Netté plus agressive pour l'impact visuel"
+        },
+        {
+          "id": "curves_hdr",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.9,
+          "ffmpeg_filter": "curves=m='0/0 0.1/0.08 0.5/0.55 0.9/0.95 1/1'",
+          "notes": "S-curve HDR — ombres profondes, hautes lumières brillantes"
+        },
+        {
+          "id": "contrast_eq",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 1.0,
+          "ffmpeg_filter": "eq=contrast=1.14:brightness=0.005:saturation=1.18:gamma=1.03",
+          "notes": "Contraste et saturation élevés pour l'énergie"
+        },
+        {
+          "id": "color_balance",
+          "effect": "MB LookSuite3",
+          "enabled": true,
+          "opacity": 0.7,
+          "ffmpeg_filter": "colorbalance=rs=-0.01:gs=0.0:bs=-0.01:rm=0.02:gm=0.0:bm=-0.01",
+          "notes": "Teinte légèrement chaude globalement"
+        },
+        {
+          "id": "highlight_bloom",
+          "effect": "S_Gradient",
+          "enabled": true,
+          "opacity": 0.25,
+          "ffmpeg_filter": "curves=m='0/0 0.7/0.72 0.9/0.96 1/1'",
+          "notes": "Glow limité sur les hautes lumières — overlay luminant"
+        },
+        {
+          "id": "grain_texture",
+          "effect": "Custom",
+          "enabled": true,
+          "opacity": 0.2,
+          "ffmpeg_filter": "noise=c0s=2:c0f=t+u,format=yuv420p",
+          "notes": "Grain très léger — on veut la clarté"
+        }
+      ],
+      "global": {
+        "output_codec": "libx264",
+        "preset": "slow",
+        "crf": 17,
+        "pix_fmt": "yuv420p",
+        "movflags": "+faststart",
+        "audio_policy": "copy"
+      }
+    }
+  }
+}

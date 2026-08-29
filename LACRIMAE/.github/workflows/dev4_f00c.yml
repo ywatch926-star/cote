@@ -1,0 +1,121 @@
+name: LACRIMAE dev4 — F00-C Motion Slow
+
+on:
+  workflow_dispatch:
+    inputs:
+      f00b_run_id:
+        description: 'ID du run F00-B validé à utiliser'
+        required: true
+        default: '32673111089'
+      source_url:
+        description: 'URL de la vidéo source f00'
+        required: true
+        default: 'https://github.com/kioka8877-ux/LACRIMAE/releases/download/f00/YTDown.com_YouTube_La-rage-de-Dark-Vador-Rogue-One-Star-War_Media_QXsPNstxLr0_001_1080p.mp4'
+      motion_slow_mode:
+        description: 'Mode : off, partial ou global'
+        required: true
+        default: 'partial'
+        type: choice
+        options:
+          - off
+          - partial
+          - global
+      motion_slow_speed:
+        description: 'Vitesse interpolée : 0.75, 0.5 ou 0.25'
+        required: true
+        default: '0.5'
+      motion_slow_ranges:
+        description: 'Plages en secondes pour partial, exemple 3-7,8-9'
+        required: false
+        default: '3-7'
+      motion_slow_engine:
+        description: 'Moteur Motion Slow validé'
+        required: true
+        default: 'ffmpeg_minterpolate'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  f00c_motion_slow_only:
+    name: F00-C — MOTION SLOW uniquement
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout dev4
+        uses: actions/checkout@v4
+
+      - name: Installer FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Télécharger l’artifact F00-B validé
+        uses: actions/download-artifact@v4
+        with:
+          name: lacrimae-dev4-f00b-${{ inputs.f00b_run_id }}
+          path: F00_INGEST/OUT/materialized
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.f00b_run_id }}
+
+      - name: Télécharger la source f00
+        run: |
+          mkdir -p F00_INGEST/IN
+          curl -L --fail --retry 3 "${{ inputs.source_url }}" -o F00_INGEST/IN/video_source.mp4
+          test -s F00_INGEST/IN/video_source.mp4
+
+      - name: Vérifier l’artifact F00-B
+        run: |
+          test -s F00_INGEST/OUT/materialized/sequences.json
+          test -d F00_INGEST/OUT/materialized/sequences
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('F00_INGEST/OUT/materialized/sequences.json')
+          data = json.loads(p.read_text())
+          assert data.get('materialized') is True
+          assert data.get('sequences')
+          print('F00-B validated:', len(data['sequences']), 'materialized sequences')
+          PY
+
+      - name: F00-C — MOTION SLOW uniquement
+        run: |
+          python3 F00_INGEST/CODEBASE/f00_motion_slow.py \
+            --source F00_INGEST/IN/video_source.mp4 \
+            --manifest F00_INGEST/OUT/materialized/sequences.json \
+            --out F00_INGEST/OUT/motion_slow \
+            --mode "${{ inputs.motion_slow_mode }}" \
+            --speed "${{ inputs.motion_slow_speed }}" \
+            --ranges "${{ inputs.motion_slow_ranges }}" \
+            --engine "${{ inputs.motion_slow_engine }}"
+
+      - name: Valider le manifeste F00-C
+        run: |
+          test -s F00_INGEST/OUT/motion_slow/motion_slow_manifest.json
+          test -s F00_INGEST/OUT/motion_slow/motion_slow_report.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('F00_INGEST/OUT/motion_slow')
+          data = json.loads((root / 'motion_slow_manifest.json').read_text())
+          assert data['schema_version'] == 'dev4.motion-slow-sequences.v1'
+          assert data['sequences']
+          assert all((root / row['file']).exists() for row in data['sequences'])
+          print('F00-C validated:', len(data['sequences']), 'outputs;', data['motion_slow'])
+          PY
+
+      - name: Publier uniquement l’artifact F00-C
+        uses: actions/upload-artifact@v4
+        with:
+          name: lacrimae-dev4-f00c-${{ github.run_id }}
+          path: |
+            F00_INGEST/OUT/motion_slow/motion_slow_manifest.json
+            F00_INGEST/OUT/motion_slow/motion_slow_report.json
+            F00_INGEST/OUT/motion_slow/sequences/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Résumé F00-C
+        run: |
+          cat F00_INGEST/OUT/motion_slow/motion_slow_report.json >> "$GITHUB_STEP_SUMMARY"

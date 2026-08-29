@@ -1,0 +1,222 @@
+name: LACRIMAE F04 Matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'Run F02 exact contenant lac-clips (obligatoire)'
+        required: true
+        type: string
+      clip_ids:
+        description: 'Reprise ciblée, IDs séparés par virgules; vide = tous les clips'
+        required: false
+        default: ''
+        type: string
+      resume_run_id:
+        description: 'Run F04 précédent dont les artifacts réussis doivent être réutilisés'
+        required: false
+        default: ''
+        type: string
+      max_parallel:
+        description: 'Concurrence maximale de la matrix (1-20)'
+        required: false
+        default: '6'
+        type: string
+      mode:
+        description: 'Mode de production, doit être meme'
+        required: true
+        default: 'meme'
+        type: choice
+        options: [meme]
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+  CLIP_IDS: ${{ inputs.clip_ids }}
+  RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+
+jobs:
+  prepare:
+    name: F04 prepare — assets stricts
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      expected_count: ${{ steps.matrix.outputs.expected_count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Installer les dépendances de préparation
+        run: pip install requests -q
+      - name: Préparer le codex versionné de dev3
+        run: |
+          mkdir -p "$RUNNER_TEMP/f04-input/codex"
+          test -f F03_PREVIEW/IN/codex.json
+          python3 tools/validate_f04_codex.py F03_PREVIEW/IN/codex.json
+          cp F03_PREVIEW/IN/codex.json "$RUNNER_TEMP/f04-input/codex/codex.json"
+      - name: Télécharger les clips exacts depuis le run F02
+        run: |
+          mkdir -p "$RUNNER_TEMP/f04-input/clips"
+          if python3 tools/download_artifact_run.py "$SOURCE_RUN_ID" lac-clips "$RUNNER_TEMP/f04-input/clips" && [ "$(find "$RUNNER_TEMP/f04-input/clips" -maxdepth 1 -name '*.mp4' | wc -l)" -eq "$(python3 -c 'import json; print(len(json.load(open("F03_PREVIEW/IN/codex.json"))["clips"]))')" ]; then
+            echo "F02 source artifact chargé depuis le run $SOURCE_RUN_ID"
+          else
+            echo "AVERTISSEMENT: lac-clips absent du run $SOURCE_RUN_ID; reprise des clips F02 versionnés dans dev3"
+            rm -rf "$RUNNER_TEMP/f04-input/clips"/*
+            cp F02_FORMAT/OUT/clips/*.mp4 "$RUNNER_TEMP/f04-input/clips/"
+          fi
+      - name: Préparer et contrôler la matrix
+        id: matrix
+        run: |
+          python3 tools/f04_prepare_matrix.py \
+            --codex "$RUNNER_TEMP/f04-input/codex/codex.json" \
+            --clips-dir "$RUNNER_TEMP/f04-input/clips" \
+            --out "$RUNNER_TEMP/f04-input/input_manifest.json" \
+            --clip-ids "$CLIP_IDS" | tee "$RUNNER_TEMP/matrix.json"
+          MATRIX=$(head -n 1 "$RUNNER_TEMP/matrix.json")
+          COUNT=$(python3 -c 'import json; print(len(json.load(open("'"$RUNNER_TEMP"'/f04-input/input_manifest.json"))["clips"]))')
+          echo "matrix={\"include\":$(python3 -c 'import json; print(json.dumps(json.load(open("'"$RUNNER_TEMP"'/f04-input/input_manifest.json"))["clips"]))')}" >> "$GITHUB_OUTPUT"
+          echo "expected_count=$COUNT" >> "$GITHUB_OUTPUT"
+      - name: Préparer le workspace CUSTOS F04
+        run: |
+          mkdir -p F04_RENDER/IN/clips
+          cp "$RUNNER_TEMP/f04-input/codex/codex.json" F04_RENDER/IN/codex.json
+          cp "$RUNNER_TEMP/f04-input/clips/"*.mp4 F04_RENDER/IN/clips/
+      - name: F04 CUSTOS check-in global
+        run: python3 LAC_CUSTOS.py --frigate F04 --mode check-in --drive-base .
+      - name: Vérifier les assets obligatoires et publier le bundle d’entrée
+        run: |
+          test -f "$RUNNER_TEMP/f04-input/codex/codex.json"
+          test -f "$RUNNER_TEMP/f04-input/input_manifest.json"
+          mkdir -p "$RUNNER_TEMP/f04-bundle/clips"
+          cp "$RUNNER_TEMP/f04-input/codex/codex.json" "$RUNNER_TEMP/f04-bundle/codex.json"
+          cp "$RUNNER_TEMP/f04-input/input_manifest.json" "$RUNNER_TEMP/f04-bundle/input_manifest.json"
+          while read -r file; do cp "$RUNNER_TEMP/f04-input/clips/$file" "$RUNNER_TEMP/f04-bundle/clips/$file"; done < <(python3 -c 'import json; [print(x["filename"]) for x in json.load(open("'"$RUNNER_TEMP"'/f04-input/input_manifest.json"))["clips"]]')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f04-inputs-${{ github.run_id }}
+          path: ${{ runner.temp }}/f04-bundle/
+          if-no-files-found: error
+          retention-days: 14
+
+  render:
+    name: F04 render — ${{ matrix.clip_id }}
+    needs: prepare
+    if: needs.prepare.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJSON(inputs.max_parallel) }}
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Installer les dépendances Python
+        run: pip install requests -q
+      - name: Télécharger le bundle d’entrée exact
+        uses: actions/download-artifact@v4
+        with:
+          name: f04-inputs-${{ github.run_id }}
+          path: ${{ runner.temp }}/f04-bundle
+      - name: Préparer uniquement l’asset du clip matrix
+        run: |
+          test -f "$RUNNER_TEMP/f04-bundle/clips/${{ matrix.filename }}"
+          mkdir -p F04_RENDER/CODEBASE/public F04_RENDER/OUT
+          cp "$RUNNER_TEMP/f04-bundle/codex.json" F04_RENDER/CODEBASE/public/codex.json
+          cp "$RUNNER_TEMP/f04-bundle/clips/${{ matrix.filename }}" "F04_RENDER/CODEBASE/public/${{ matrix.filename }}"
+          test -s SHARED/IN/fonts/Anton-Regular.ttf
+          fc-scan --format '%{family}\n' SHARED/IN/fonts/Anton-Regular.ttf | grep -Fx 'Anton'
+          mkdir -p F04_RENDER/CODEBASE/public/fonts
+          cp SHARED/IN/fonts/Anton-Regular.ttf F04_RENDER/CODEBASE/public/fonts/Anton-Regular.ttf
+          if [ -d SHARED/IN/backgrounds ]; then mkdir -p F04_RENDER/CODEBASE/public/backgrounds && cp SHARED/IN/backgrounds/* F04_RENDER/CODEBASE/public/backgrounds/ || true; fi
+          if [ -d SHARED/IN/logos ] && [ -f SHARED/IN/logos/logo.png ]; then cp SHARED/IN/logos/logo.png F04_RENDER/CODEBASE/public/logo.png; fi
+      - name: Installer Remotion
+        run: cd F04_RENDER/CODEBASE && npm install
+      - name: Vérifier les entrées visuelles sans valider automatiquement le background
+        run: |
+          test -s F04_RENDER/CODEBASE/public/fonts/Anton-Regular.ttf
+          fc-scan --format '%{family}\n' F04_RENDER/CODEBASE/public/fonts/Anton-Regular.ttf | grep -Fx 'Anton'
+          if [ -f F04_RENDER/CODEBASE/public/backgrounds/bg_paper_crumpled.png ]; then echo 'bg_paper_crumpled.png disponible'; fi
+      - name: Synchroniser codexData.js
+        run: |
+          cd F04_RENDER/CODEBASE
+          python3 - <<'PYEOF'
+          import json
+          codex=json.load(open('public/codex.json', encoding='utf-8'))
+          open('src/codexData.js','w',encoding='utf-8').write('export const codex = '+json.dumps(codex,ensure_ascii=False,indent=2)+';\n')
+          PYEOF
+      - name: Rendre uniquement ${{ matrix.clip_id }}
+        run: |
+          cd F04_RENDER/CODEBASE
+          npx remotion render src/index.jsx '${{ matrix.clip_id }}' '../OUT/${{ matrix.raw }}_finale.mp4' --codec h264 --image-format jpeg --concurrency 1
+          test -s "../OUT/${{ matrix.raw }}_finale.mp4"
+          sha256sum "../OUT/${{ matrix.raw }}_finale.mp4" > "../OUT/${{ matrix.raw }}_finale.sha256"
+          printf '{"clip_id":"%s","filename":"%s_finale.mp4","source_sha256":"%s"}\n' '${{ matrix.clip_id }}' '${{ matrix.raw }}' '${{ matrix.source_sha256 }}' > "../OUT/${{ matrix.raw }}_result.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f04-${{ matrix.clip_id }}
+          path: F04_RENDER/OUT/
+          if-no-files-found: error
+          retention-days: 14
+
+  aggregate:
+    name: F04 aggregate — vérification finale
+    needs: [prepare, render]
+    if: always() && needs.prepare.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: f04-clip-*
+          path: ${{ runner.temp }}/f04-results
+          merge-multiple: true
+      - name: Réutiliser les artifacts réussis du run précédent
+        if: env.RESUME_RUN_ID != ''
+        run: |
+          pip install requests -q
+          python3 tools/download_f04_artifacts_run.py "$RESUME_RUN_ID" "$RUNNER_TEMP/f04-results"
+      - uses: actions/download-artifact@v4
+        with:
+          name: f04-inputs-${{ github.run_id }}
+          path: ${{ runner.temp }}/f04-bundle
+      - name: Agréger seulement si tous les clips sont présents
+        id: aggregate
+        run: |
+          mkdir -p F04_RENDER/OUT
+          python3 tools/f04_aggregate.py \
+            --manifest "$RUNNER_TEMP/f04-bundle/input_manifest.json" \
+            --results "$RUNNER_TEMP/f04-results" \
+            --report F04_RENDER/OUT/f04_aggregate_report.json \
+            --out F04_RENDER/OUT
+      - name: F04 CUSTOS check-out global
+        if: steps.aggregate.outcome == 'success'
+        run: |
+          cp "$RUNNER_TEMP/f04-bundle/codex.json" F04_RENDER/OUT/codex.json
+          python3 LAC_CUSTOS.py --frigate F04 --mode check-out --drive-base .
+      - uses: actions/upload-artifact@v4
+        if: steps.aggregate.outcome == 'success'
+        with:
+          name: lac-video-finale
+          path: F04_RENDER/OUT/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Résumé d’échec sans publication
+        if: steps.aggregate.outcome != 'success'
+        run: |
+          echo 'F04 incomplet : aucun artifact final lac-video-finale ne sera publié.'
+          cat F04_RENDER/OUT/f04_aggregate_report.json || true
+          exit 1
