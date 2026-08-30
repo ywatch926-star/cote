@@ -102,69 +102,56 @@ def vcg_grade(
         
     except Exception as e:
         print(f"[VCG] VCG pipeline failed: {e}")
-        print("[VCG] Falling back to manual LUT generation...")
+        print("[VCG] Falling back to Reinhard color transfer...")
         
-        # ─── Fallback: Generate LUT from reference and apply ─────────
-        # Load reference image
+        # ─── Fallback: Reinhard color transfer ──────────────────────
+        # Proven algorithm: matches mean/std of LAB channels
+        # Reference: Reinhard et al. "Transfer of Color between Images" 2001
         ref_img = cv2.imread(ref_path)
         if ref_img is None:
-            raise ValueError(f"Cannot load reference image from bytes")
+            raise ValueError("Cannot load reference image from bytes")
         
-        # Read all frames
+        def reinhard_transfer(source, ref):
+            """Transfer color statistics from ref to source using LAB color space."""
+            src_lab = cv2.cvtColor(source, cv2.COLOR_BGR2LAB).astype(np.float32)
+            ref_lab = cv2.cvtColor(ref, cv2.COLOR_BGR2LAB).astype(np.float32)
+            
+            result = np.copy(src_lab)
+            for ch in range(3):  # L, a, b
+                src_mean, src_std = src_lab[:, :, ch].mean(), src_lab[:, :, ch].std()
+                ref_mean, ref_std = ref_lab[:, :, ch].mean(), ref_lab[:, :, ch].std()
+                
+                src_std = max(src_std, 1e-6)
+                
+                # Transfer: normalize source, then scale to ref stats
+                result[:, :, ch] = (
+                    (src_lab[:, :, ch] - src_mean) * (ref_std / src_std) + ref_mean
+                )
+            
+            result = np.clip(result, 0, 255).astype(np.uint8)
+            return cv2.cvtColor(result, cv2.COLOR_LAB2BGR)
+        
+        # Compute reference stats from a sample of the reference image
+        # (resize ref to match source for consistent stats)
+        ref_resized = cv2.resize(ref_img, (width, height))
+        
+        # Read all frames, apply Reinhard transfer
         cap = cv2.VideoCapture(input_path)
-        frames = []
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+        
+        frame_count = 0
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
-            frames.append(frame)
+            graded = reinhard_transfer(frame, ref_resized)
+            out.write(graded)
+            frame_count += 1
+        
         cap.release()
-        
-        # Generate simple 3D LUT from reference color histogram
-        ref_hsv = cv2.cvtColor(ref_img, cv2.COLOR_BGR2HSV)
-        ref_hist_s = cv2.calcHist([ref_hsv], [1], None, [256], [0, 256])
-        ref_hist_v = cv2.calcHist([ref_hsv], [2], None, [256], [0, 256])
-        
-        # Normalize reference histograms
-        ref_hist_s = ref_hist_s / (ref_hist_s.sum() + 1e-6)
-        ref_hist_v = ref_hist_v / (ref_hist_v.sum() + 1e-6)
-        
-        # Apply color transfer to each frame
-        out_frames = []
-        for frame in frames:
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            h, s, v = cv2.split(hsv)
-            
-            # Match saturation distribution
-            s_float = s.astype(np.float32)
-            s_mean_target = (ref_hist_s * np.arange(256)).sum() * 255
-            s_mean_current = s_float.mean()
-            if s_mean_current > 0:
-                s_float = s_float * (s_mean_target / s_mean_current)
-                s_float = np.clip(s_float, 0, 255)
-            
-            # Match value distribution
-            v_float = v.astype(np.float32)
-            v_mean_target = (ref_hist_v * np.arange(256)).sum() * 255
-            v_mean_current = v_float.mean()
-            if v_mean_current > 0:
-                v_float = v_float * (v_mean_target / v_mean_current)
-                v_float = np.clip(v_float, 0, 255)
-            
-            hsv_transferred = cv2.merge([
-                h,
-                s_float.astype(np.uint8),
-                v_float.astype(np.uint8)
-            ])
-            bgr_transferred = cv2.cvtColor(hsv_transferred, cv2.COLOR_HSV2BGR)
-            out_frames.append(bgr_transferred)
-        
-        # Write output
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-        for frame in out_frames:
-            out.write(frame)
         out.release()
+        print(f"[VCG] Reinhard fallback applied to {frame_count} frames")
     
     # ─── Read output ─────────────────────────────────────────────────
     with open(output_path, "rb") as f:
