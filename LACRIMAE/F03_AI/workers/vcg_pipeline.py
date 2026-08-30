@@ -156,7 +156,7 @@ def vcg_grade(
         print("[VCG] Falling back to cinematic grade...")
         
         # ─── Fallback: Simple cinematic color grading ─────────────
-        def cinematic_grade(frame, sat_boost=1.15, contrast=1.08, warmth=1.03):
+        def cinematic_grade(frame, sat_boost=1.1, contrast=1.05, warmth=1.0):
             """Apply subtle cinematic look without destroying skin tones."""
             # 1. Boost saturation slightly (HSV)
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV).astype(np.float32)
