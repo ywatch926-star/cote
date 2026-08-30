@@ -106,7 +106,7 @@ def amt_interpolate(
         "default": {"sharpen_int": 1.2, "sat_boost": 1.1, "glow_int": 0.4},
         "demon": {"sharpen_int": 1.8, "sat_boost": 1.4, "glow_int": 0.6},
         "cinema": {"sharpen_int": 0.8, "sat_boost": 1.05, "glow_int": 0.3},
-        "crunchy": {"sharpen_int": 1.5, "sat_boost": 1.3, "glow_int": 0.5},
+        "crunchy": {"sharpen_int": 1.5, "sat_boost": 1.1, "glow_int": 0.5},
     }
     style = style_params.get(style_preset, style_params["default"])
     
