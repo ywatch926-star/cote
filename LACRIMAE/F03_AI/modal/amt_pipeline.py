@@ -5,6 +5,8 @@ GPU: A10G | Timeout: 900s
 Pure tensor — no FFmpeg.
 """
 import modal
+import cv2
+import numpy as np
 
 app = modal.App("lac-amt-interpolation")
 
@@ -19,10 +21,11 @@ amt_image = (
     .run_commands(
         "git clone https://github.com/MCG-NKU/AMT.git /app"
     )
+    .pip_install("gdown")
     .run_commands(
         "mkdir -p /app/ckpt && "
-        "wget -O /app/ckpt/amt-g.pth "
-        "https://huggingface.co/mcg-nku/AMT/resolve/main/amt-g.pth"
+        # AMT-G weights from Google Drive (official source)
+        "gdown 1EwFSm6JFjcnIC5JMbfKgWU5qBInU1G_b -O /app/ckpt/amt-g.pth"
     )
 )
 

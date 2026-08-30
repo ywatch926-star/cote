@@ -11,22 +11,25 @@ app = modal.App("lac-diffbir-upscale")
 diffbir_image = (
     modal.Image.debian_slim()
     .apt_install("git", "libgl1-mesa-glx", "libglib2.0-0", "wget")
+    # Install PyTorch first (with its own CUDA), then basicsr separately
     .pip_install(
         "torch", "torchvision", "torchaudio",
         "opencv-python-headless", "numpy", "tqdm",
         "einops", "scipy", "omegaconf", "safetensors",
-        "basicsr", "facexlib", "realesrgan",
+    )
+    .run_commands(
+        "pip install basicsr facexlib realesrgan --no-deps"
     )
     .run_commands(
         "git clone https://github.com/XPixelGroup/DiffBIR.git /app && "
-        "cd /app && pip install -r requirements.txt"
+        "cd /app && pip install -r requirements.txt --no-deps"
     )
     .run_commands(
         "mkdir -p /app/weights && "
         "wget -O /app/weights/general_swinir_v1.ckpt "
-        "https://huggingface.co/l千里之行/DiffBIR/resolve/main/weights/general_swinir_v1.ckpt && "
+        "https://huggingface.co/lxq007/DiffBIR/resolve/main/general_swinir_v1.ckpt && "
         "wget -O /app/weights/face_swinir_v1.ckpt "
-        "https://huggingface.co/l千里之行/DiffBIR/resolve/main/weights/face_swinir_v1.ckpt"
+        "https://huggingface.co/lxq007/DiffBIR/resolve/main/face_swinir_v1.ckpt"
     )
 )
 
