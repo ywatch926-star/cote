@@ -1,0 +1,38 @@
+{
+  "default": {
+    "sharpen_int": 1.2,
+    "sat_boost": 1.1,
+    "glow_int": 0.4,
+    "glow_small_ksize": 25,
+    "glow_wide_ksize": 71,
+    "highlight_threshold": 205,
+    "description": "Balanced crunchy look — good starting point"
+  },
+  "demon": {
+    "sharpen_int": 1.8,
+    "sat_boost": 1.4,
+    "glow_int": 0.6,
+    "glow_small_ksize": 25,
+    "glow_wide_ksize": 71,
+    "highlight_threshold": 195,
+    "description": "Ultra-hard look — maximum oversharpening and saturation"
+  },
+  "cinema": {
+    "sharpen_int": 0.8,
+    "sat_boost": 1.05,
+    "glow_int": 0.3,
+    "glow_small_ksize": 31,
+    "glow_wide_ksize": 91,
+    "highlight_threshold": 210,
+    "description": "Softer cinematic look — less aggressive, more refined"
+  },
+  "crunchy": {
+    "sharpen_int": 1.5,
+    "sat_boost": 1.3,
+    "glow_int": 0.5,
+    "glow_small_ksize": 25,
+    "glow_wide_ksize": 71,
+    "highlight_threshold": 200,
+    "description": "The TikTok viral look — strong crunch, eye-catching"
+  }
+}

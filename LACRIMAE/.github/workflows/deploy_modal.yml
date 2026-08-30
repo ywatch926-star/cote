@@ -1,0 +1,58 @@
+name: Deploy F03_AI Modal Workers
+
+on:
+  push:
+    branches: [dev6-D]
+    paths:
+      - 'LACRIMAE/F03_AI/**'
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: 'Which worker to deploy (all/diffbir/vcg/amt)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - diffbir
+          - vcg
+          - amt
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Install Modal
+        run: pip install modal
+      
+      - name: Deploy DiffBIR worker
+        if: inputs.worker == 'all' || inputs.worker == 'diffbir'
+        run: modal deploy LACRIMAE/F03_AI/modal/diffbir_pipeline.py
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      
+      - name: Deploy VCG worker
+        if: inputs.worker == 'all' || inputs.worker == 'vcg'
+        run: modal deploy LACRIMAE/F03_AI/modal/vcg_pipeline.py
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      
+      - name: Deploy AMT worker
+        if: inputs.worker == 'all' || inputs.worker == 'amt'
+        run: modal deploy LACRIMAE/F03_AI/modal/amt_pipeline.py
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      
+      - name: Summary
+        run: |
+          echo "✅ F03_AI Modal workers deployed successfully"
+          echo "Worker: ${{ inputs.worker || 'all' }}"

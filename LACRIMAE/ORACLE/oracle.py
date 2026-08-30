@@ -17,7 +17,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-STAGES = [
+STAGES_V2 = [
+    # Legacy pipeline (dev6-B/C) — kept for reference
     "F00_PORTA_INGRESSUS",
     "F01_AUSPEX_OCULUS",
     "F02_MOTUS_RIFE",
@@ -30,6 +31,18 @@ STAGES = [
     "F09_AETHER_COMPOSITUM",
     "F10_CUSTOS_RESTITUTIO",
 ]
+
+# F03_AI pipeline (dev6-D) — 3 neural workers replace F02→F09
+STAGES_V3 = [
+    "F00_PORTA_INGRESSUS",
+    "F01_AUSPEX_OCULUS",
+    "F03_AI_DIFFBIR",
+    "F03_AI_VCG",
+    "F03_AI_AMT",
+    "F10_CUSTOS_RESTITUTIO",
+]
+
+STAGES = STAGES_V3  # Default to v3 neural pipeline
 
 
 def now() -> str:
@@ -179,6 +192,8 @@ def main() -> int:
     create.add_argument("--source", type=Path, required=True)
     create.add_argument("--target-fps", type=int, default=120)
     create.add_argument("--profile", default="cinematic_hyper_detail")
+    create.add_argument("--pipeline", default="v3", choices=["v2", "v3"],
+                        help="v2=legacy FFmpeg, v3=neural AI pipeline")
     simulate = sub.add_parser("simulate", help="avancer une frégate sans GPU")
     simulate.add_argument("--root", default=".")
     simulate.add_argument("--campaign-id", required=True)

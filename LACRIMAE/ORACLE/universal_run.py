@@ -18,7 +18,8 @@ from typing import Any
 from auspex import analyze_video
 from oracle import campaign_dir, load_state, save_state, state_path
 
-REMOTE_STAGES = {
+# Legacy remote stages (dev6-B/C) — kept for v2 pipeline
+REMOTE_STAGES_V2 = {
     "F02_MOTUS_RIFE": "F02_MOTUS_RIFE",
     "F03_APOTHECA_RESTAURA": "F03_APOTHECA_RESTAURA",
     "F04_FORGE_TEXTURA": "F04_FORGE_TEXTURA",
@@ -26,6 +27,13 @@ REMOTE_STAGES = {
     "F06_LUMEN_IGNIS": "F06_LUMEN_IGNIS",
     "F07_CHROMA_DOMINATUS": "F07_CHROMA_DOMINATUS",
     "F08_TEMPORALIS_CONSISTENTIA": "F08_TEMPORALIS_CONSISTENTIA",
+}
+
+# F03_AI pipeline (dev6-D) — orchestrator chains 3 Modal workers
+F03_AI_STAGES = {
+    "F03_AI_DIFFBIR": "lac-diffbir-upscale",
+    "F03_AI_VCG": "lac-vcg-color-grading",
+    "F03_AI_AMT": "lac-amt-interpolation",
 }
 
 
@@ -62,6 +70,8 @@ def main() -> int:
     parser.add_argument("--target-fps", type=int, default=120)
     parser.add_argument("--compositing-preset", default=None,
                         help="Preset F09 (clean_realistic, silver_gray, dark, warm, viral_hdr). Par défaut, mappé depuis le profil ATOM.")
+    parser.add_argument("--pipeline", default="v3", choices=["v2", "v3"],
+                        help="v2=legacy FFmpeg, v3=neural AI pipeline")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 

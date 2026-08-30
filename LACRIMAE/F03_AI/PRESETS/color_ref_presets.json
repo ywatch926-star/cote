@@ -1,0 +1,25 @@
+{
+  "_comment": "Map preset names to reference images for VCG color grading",
+  "_usage": "Place reference images in PRESETS/refs/ and map them here",
+  
+  "golden_hour": {
+    "image": "refs/golden_hour.png",
+    "description": "Warm amber tones — sunset/castle aesthetic",
+    "source": "From CC release Butcher.jpg style"
+  },
+  "cold_blue": {
+    "image": "refs/cold_blue.png",
+    "description": "Cold blue-teal tones — night/cyberpunk",
+    "source": "Custom"
+  },
+  "vintage_film": {
+    "image": "refs/vintage_film.png",
+    "description": "Faded vintage film look — desaturated with lifted blacks",
+    "source": "Custom"
+  },
+  "viral_hdr": {
+    "image": "refs/viral_hdr.png",
+    "description": "High-contrast HDR look — YouTube/TikTok viral style",
+    "source": "Custom"
+  }
+}
