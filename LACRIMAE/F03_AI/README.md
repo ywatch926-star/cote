@@ -51,14 +51,14 @@ VIDÉO FINALE 🎬 1080p | 120fps | Crunchy | Color Graded
 
 ### CLI
 ```bash
-python F03_AI/modal/orchestrator.py input.mp4 reference.png output.mp4 --style crunchy
+python F03_AI/workers/orchestrator.py input.mp4 reference.png output.mp4 --style crunchy
 ```
 
 ### Modal Deploy
 ```bash
-modal deploy F03_AI/modal/diffbir_pipeline.py
-modal deploy F03_AI/modal/vcg_pipeline.py
-modal deploy F03_AI/modal/amt_pipeline.py
+modal deploy F03_AI/workers/diffbir_pipeline.py
+modal deploy F03_AI/workers/vcg_pipeline.py
+modal deploy F03_AI/workers/amt_pipeline.py
 ```
 
 ### GitHub Actions

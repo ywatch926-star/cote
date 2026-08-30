@@ -33,21 +33,21 @@ jobs:
       
       - name: Deploy DiffBIR worker
         if: inputs.worker == 'all' || inputs.worker == 'diffbir'
-        run: modal deploy LACRIMAE/F03_AI/modal/diffbir_pipeline.py
+        run: modal deploy LACRIMAE/F03_AI/workers/diffbir_pipeline.py
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       
       - name: Deploy VCG worker
         if: inputs.worker == 'all' || inputs.worker == 'vcg'
-        run: modal deploy LACRIMAE/F03_AI/modal/vcg_pipeline.py
+        run: modal deploy LACRIMAE/F03_AI/workers/vcg_pipeline.py
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       
       - name: Deploy AMT worker
         if: inputs.worker == 'all' || inputs.worker == 'amt'
-        run: modal deploy LACRIMAE/F03_AI/modal/amt_pipeline.py
+        run: modal deploy LACRIMAE/F03_AI/workers/amt_pipeline.py
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
