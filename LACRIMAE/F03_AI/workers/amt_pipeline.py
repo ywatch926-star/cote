@@ -126,6 +126,39 @@ def amt_interpolate(
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, target_fps, (width, height))
     
+    # ─── BGR/RGB diagnostic probe ──────────────────────────────────
+    def check_color_channels(image_matrix, step_name):
+        """Analyze raw pixel data to detect BGR/RGB inversion."""
+        if hasattr(image_matrix, "detach"):
+            img_np = image_matrix.detach().cpu().numpy()
+            if img_np.ndim == 4: img_np = img_np[0]
+            if img_np.shape[0] == 3:
+                img_np = np.transpose(img_np, (1, 2, 0))
+            img_np = (img_np * 255).astype(np.uint8)
+        else:
+            img_np = image_matrix.copy()
+        mean_ch0 = float(np.mean(img_np[:, :, 0]))
+        mean_ch2 = float(np.mean(img_np[:, :, 2]))
+        print(f"\n[COLOR-PROBE] {step_name}")
+        print(f"  Canal 0: {mean_ch0:.2f} | Canal 2: {mean_ch2:.2f}")
+        if mean_ch0 > mean_ch2 + 20:
+            print(f"  🚨 INVERSION BGR/RGB! Canal 0 > Canal 2 de {mean_ch0-mean_ch2:.2f}")
+            return True
+        elif mean_ch2 > mean_ch0 + 20:
+            print(f"  ✅ Format CORRECT (R > B)")
+            return False
+        else:
+            print(f"  ⚠️ Canaux proches")
+            return False
+
+    # ─── PROBE 1: Check input tensor ─────────────────────────────────
+    print("\n" + "="*50)
+    print("[COLOR-PROBE] ETAPE ENTREE: Tensor depuis OpenCV")
+    print("="*50)
+    if frames:
+        probe_frame = (frames[0].permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
+        check_color_channels(probe_frame, "ENTREE_AMT (tensor → numpy)")
+
     frame_count = 0
     with torch.no_grad():
         for i in range(len(frames) - 1):
@@ -134,8 +167,9 @@ def amt_interpolate(
             
             # Write original frame anchor
             orig = (frames[i].permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
-            orig_bgr = cv2.cvtColor(orig, cv2.COLOR_RGB2BGR)
-            orig_styled = _apply_style(orig_bgr, style)
+            # BUG FIX: tensor comes from OpenCV which is BGR, so orig is already BGR
+            # Do NOT apply COLOR_RGB2BGR which would invert channels!
+            orig_styled = _apply_style(orig, style)
             out.write(orig_styled)
             frame_count += 1
             
@@ -147,13 +181,18 @@ def amt_interpolate(
                     try:
                         interp = model.inference(frame0, frame1, t)
                     except Exception:
-                        # Fallback: simple linear blend
                         interp = frame0 * (1 - t) + frame1 * t
                 else:
                     interp = frame0 * (1 - t) + frame1 * t
                 
                 out_img = interp.squeeze(0).permute(1, 2, 0).clip(0, 1).cpu().numpy()
-                out_bgr = cv2.cvtColor((out_img * 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
+                # BUG FIX: same as above, tensor is BGR from OpenCV
+                out_bgr = (out_img * 255).astype(np.uint8)
+                
+                # PROBE: Check first interpolated frame
+                if frame_count <= 1:
+                    check_color_channels(out_bgr, "FRAME_INTERPOLE (tensor → numpy)")
+                
                 out_styled = _apply_style(out_bgr, style)
                 out.write(out_styled)
                 frame_count += 1
@@ -161,8 +200,7 @@ def amt_interpolate(
         # Write final anchor
         if frames:
             final = (frames[-1].permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
-            final_bgr = cv2.cvtColor(final, cv2.COLOR_RGB2BGR)
-            final_styled = _apply_style(final_bgr, style)
+            final_styled = _apply_style(final, style)
             out.write(final_styled)
             frame_count += 1
     

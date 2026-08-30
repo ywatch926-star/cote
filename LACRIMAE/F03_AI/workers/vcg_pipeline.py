@@ -58,6 +58,36 @@ def vcg_grade(
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
+    # ─── BGR/RGB diagnostic probe (from other agent suggestion) ──────
+    def check_color_channels(image_matrix, step_name):
+        """Analyze raw pixel data to detect BGR/RGB inversion."""
+        if hasattr(image_matrix, "detach"):
+            img_np = image_matrix.detach().cpu().numpy()
+            if img_np.ndim == 4: img_np = img_np[0]
+            if img_np.shape[0] == 3:
+                img_np = np.transpose(img_np, (1, 2, 0))
+            img_np = (img_np * 255).astype(np.uint8)
+        else:
+            img_np = image_matrix.copy()
+
+        mean_ch0 = float(np.mean(img_np[:, :, 0]))
+        mean_ch2 = float(np.mean(img_np[:, :, 2]))
+
+        print(f"\n[COLOR-PROBE] {step_name}")
+        print(f"  Canal 0 (B in BGR): {mean_ch0:.2f}")
+        print(f"  Canal 2 (R in BGR): {mean_ch2:.2f}")
+
+        if mean_ch0 > mean_ch2 + 20:
+            print(f"  🚨 INVERSION BGR/RGB DETECTEE a l'etape '{step_name}'!")
+            print(f"  Canal 0 > Canal 2 de {mean_ch0 - mean_ch2:.2f} -> Peau sera BLEUE")
+            return True
+        elif mean_ch2 > mean_ch0 + 20:
+            print(f"  ✅ Format CORRECT (R > B = peau humaine normale)")
+            return False
+        else:
+            print(f"  ⚠️ Canaux proches (pas d'inversion evidente)")
+            return False
+    
     # ─── Write inputs to container ───────────────────────────────────
     input_path = "/tmp/input_vcg.mp4"
     ref_path = "/tmp/reference_vcg.png"
@@ -68,19 +98,27 @@ def vcg_grade(
     with open(ref_path, "wb") as f:
         f.write(reference_image_bytes)
     
-    # ─── Read video info ─────────────────────────────────────────────
+    # ─── PROBE 1: Read first frame from input ────────────────────────
+    print("\n" + "="*50)
+    print("[COLOR-PROBE] ETAPE 1: Lecture frame brute (OpenCV)")
+    print("="*50)
     cap = cv2.VideoCapture(input_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    ret, first_frame = cap.read()
     cap.release()
+    
+    if ret:
+        check_color_channels(first_frame, "ENTREE_VCG (apres cv2.VideoCapture)")
     
     print(f"[VCG] Input: {width}x{height} @ {fps}fps, {total_frames} frames")
     print(f"[VCG] LUT resolution: {lut_resolution}³")
     
     # ─── Load VCG Pipeline ───────────────────────────────────────────
     print("[VCG] Loading L-Diffuser model...")
+    vcg_success = False
     try:
         from models.vcg_pipeline import VideoColorGradingPipeline
         
@@ -99,13 +137,25 @@ def vcg_grade(
             lut_resolution=lut_resolution,
             temporal_consistency=temporal_consistency,
         )
+        vcg_success = True
+        
+        # ─── PROBE 2: Check VCG output ───────────────────────────────
+        print("\n" + "="*50)
+        print("[COLOR-PROBE] ETAPE 2: Sortie VCG pipeline")
+        print("="*50)
+        cap = cv2.VideoCapture(output_path)
+        ret, vcg_frame = cap.read()
+        cap.release()
+        if ret:
+            check_color_channels(vcg_frame, "SORTIE_VCG (apres pipeline IA)")
         
     except Exception as e:
         print(f"[VCG] VCG pipeline failed: {e}")
-        print("[VCG] Falling back to Reinhard color transfer...")
+    
+    if not vcg_success:
+        print("[VCG] Falling back to cinematic grade...")
         
         # ─── Fallback: Simple cinematic color grading ─────────────
-        # Safe, predictable: saturation boost + contrast + warm tone
         def cinematic_grade(frame, sat_boost=1.15, contrast=1.08, warmth=1.03):
             """Apply subtle cinematic look without destroying skin tones."""
             # 1. Boost saturation slightly (HSV)
@@ -133,13 +183,32 @@ def vcg_grade(
             ret, frame = cap.read()
             if not ret:
                 break
+            
+            # ─── PROBE: Check each frame before write ─────────────
+            if frame_count == 0:
+                check_color_channels(frame, "FALLBACK_ENTREE (avant cinematic_grade)")
+            
             graded = cinematic_grade(frame)
+            
+            if frame_count == 0:
+                check_color_channels(graded, "FALLBACK_SORTIE (apres cinematic_grade)")
+            
             out.write(graded)
             frame_count += 1
         
         cap.release()
         out.release()
         print(f"[VCG] Cinematic fallback applied to {frame_count} frames")
+        
+        # ─── PROBE 3: Check final output file ─────────────────────
+        print("\n" + "="*50)
+        print("[COLOR-PROBE] ETAPE 3: Verification fichier final")
+        print("="*50)
+        cap = cv2.VideoCapture(output_path)
+        ret, final_frame = cap.read()
+        cap.release()
+        if ret:
+            check_color_channels(final_frame, "FICHIER_FINAL (relu depuis output.mp4)")
     
     # ─── Read output ─────────────────────────────────────────────────
     with open(output_path, "rb") as f:
