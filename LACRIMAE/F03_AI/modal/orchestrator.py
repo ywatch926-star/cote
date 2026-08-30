@@ -76,7 +76,7 @@ def run_pipeline(
     step_start = time.time()
     try:
         diffbir_fn = modal.Function.from_name(
-            "lac-diffbir-upscale", "diffbir_upscale"
+            "lac-upscale", "diffbir_upscale"
         )
         step1_bytes = diffbir_fn.remote(video_bytes, sr_scale=sr_scale)
         step1_time = time.time() - step_start

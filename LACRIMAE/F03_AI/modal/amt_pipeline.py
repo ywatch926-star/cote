@@ -21,11 +21,10 @@ amt_image = (
     .run_commands(
         "git clone https://github.com/MCG-NKU/AMT.git /app"
     )
-    .pip_install("gdown")
     .run_commands(
         "mkdir -p /app/ckpt && "
-        # AMT-G weights from Google Drive (official source)
-        "gdown 1EwFSm6JFjcnIC5JMbfKgWU5qBInU1G_b -O /app/ckpt/amt-g.pth"
+        "wget -O /app/ckpt/amt-g.pth "
+        "https://huggingface.co/lalala125/AMT/resolve/main/amt-g.pth"
     )
 )
 

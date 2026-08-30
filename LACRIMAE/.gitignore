@@ -36,3 +36,6 @@ TRACKING/pre_f00ab_backup/
 # Local model downloads and test clips
 .model_downloads/
 .test/
+
+# CC release archives (analyzed, not code)
+.cc_release/

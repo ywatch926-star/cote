@@ -5,31 +5,25 @@ GPU: A10G | Timeout: 600s
 """
 import modal
 
-app = modal.App("lac-diffbir-upscale")
+app = modal.App("lac-upscale")
 
 # ─── Docker Image ────────────────────────────────────────────────────
+# Using Real-ESRGAN for upscale + texture (same class as DiffBIR, no CUDA conflicts)
+# Real-ESRGAN for upscale + texture regeneration
 diffbir_image = (
     modal.Image.debian_slim()
     .apt_install("git", "libgl1-mesa-glx", "libglib2.0-0", "wget")
-    # Install PyTorch first (with its own CUDA), then basicsr separately
-    .pip_install(
-        "torch", "torchvision", "torchaudio",
-        "opencv-python-headless", "numpy", "tqdm",
-        "einops", "scipy", "omegaconf", "safetensors",
-    )
-    .run_commands(
-        "pip install basicsr facexlib realesrgan --no-deps"
-    )
-    .run_commands(
-        "git clone https://github.com/XPixelGroup/DiffBIR.git /app && "
-        "cd /app && pip install -r requirements.txt --no-deps"
-    )
+    # Step 1: Install PyTorch first (with its own CUDA)
+    .pip_install("torch==2.5.1", "torchvision==0.20.1", "numpy", "opencv-python-headless", "tqdm", "scipy")
+    # Step 2: Install basicsr/realesrgan WITHOUT deps (avoids CUDA conflict)
+    .run_commands("pip install basicsr facexlib realesrgan --no-deps")
+    # Step 3: Download model weights
     .run_commands(
         "mkdir -p /app/weights && "
-        "wget -O /app/weights/general_swinir_v1.ckpt "
-        "https://huggingface.co/lxq007/DiffBIR/resolve/main/general_swinir_v1.ckpt && "
-        "wget -O /app/weights/face_swinir_v1.ckpt "
-        "https://huggingface.co/lxq007/DiffBIR/resolve/main/face_swinir_v1.ckpt"
+        "wget -O /app/weights/RealESRGAN_x4plus.pth "
+        "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth && "
+        "wget -O /app/weights/RealESRGAN_x2plus.pth "
+        "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth"
     )
 )
 
@@ -80,29 +74,31 @@ def diffbir_upscale(video_bytes: bytes, sr_scale: int = 2) -> bytes:
     print(f"[DiffBIR] Input: {orig_w}x{orig_h} @ {fps}fps")
     print(f"[DiffBIR] Target: {target_w}x{target_h} (scale ×{sr_scale})")
     
-    # ─── Load DiffBIR model ──────────────────────────────────────────
-    print("[DiffBIR] Loading model...")
-    try:
-        from basicsr.archs.rrdbnet_arch import RRDBNet
-        from diffbir.inference import load_net, inference_chinese
-        
-        # General model for backgrounds
-        model = load_net("/app/weights/general_swinir_v1.ckpt", device)
-        model.eval()
-        
-        use_diffbir = True
-        print("[DiffBIR] Model loaded successfully (DiffBIR inference)")
-    except Exception as e:
-        print(f"[DiffBIR] DiffBIR load failed: {e}, falling back to Real-ESRGAN")
-        from realesrgan import RealESRGANer
-        from basicsr.archs.rrdbnet_arch import RRDBNet
-        
-        net = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=sr_scale)
-        upsampler = RealESRGANer(
-            scale=sr_scale, model_path="/app/weights/general_swinir_v1.ckpt",
-            model=net, tile=256, tile_pad=10, pre_pad=0, half=True, device=device
-        )
-        use_diffbir = False
+    # ─── Load Real-ESRGAN model ──────────────────────────────────────
+    print("[Upscale] Loading Real-ESRGAN model...")
+    from realesrgan import RealESRGANer
+    from basicsr.archs.rrdbnet_arch import RRDBNet
+    
+    # RRDBNet architecture (same as ESRGAN/Real-ESRGAN)
+    net = RRDBNet(
+        num_in_ch=3, num_out_ch=3, num_feat=64,
+        num_block=23, num_grow_ch=32, scale=sr_scale
+    )
+    
+    # Select model based on scale
+    if sr_scale == 4:
+        model_path = "/app/weights/RealESRGAN_x4plus.pth"
+    elif sr_scale == 2:
+        model_path = "/app/weights/RealESRGAN_x2plus.pth"
+    else:
+        model_path = "/app/weights/RealESRGAN_x4plus.pth"
+    
+    upsampler = RealESRGANer(
+        scale=sr_scale, model_path=model_path,
+        model=net, tile=256, tile_pad=10, pre_pad=0,
+        half=True, device=device
+    )
+    print(f"[Upscale] Real-ESRGAN loaded (scale ×{sr_scale}, model: {model_path})")
     
     # ─── Process frames ──────────────────────────────────────────────
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -115,26 +111,14 @@ def diffbir_upscale(video_bytes: bytes, sr_scale: int = 2) -> bytes:
             if not ret:
                 break
             
-            if use_diffbir:
-                # DiffBIR inference (latent diffusion upscale)
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                tensor = torch.from_numpy(rgb).permute(2, 0, 1).float().to(device) / 255.0
-                tensor = tensor.unsqueeze(0)
-                
-                # Simple upscale with DiffBIR model
-                try:
-                    upscaled = model(tensor)
-                    result = upscaled.squeeze(0).permute(1, 2, 0).cpu().numpy()
-                    result = (result * 255).clip(0, 255).astype(np.uint8)
-                    result_bgr = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
-                except Exception:
-                    # Fallback: simple bicubic upscale
-                    result_bgr = cv2.resize(frame, (target_w, target_h), 
-                                            interpolation=cv2.INTER_CUBIC)
-            else:
-                # Real-ESRGAN fallback
+            # Real-ESRGAN inference (neural upscale + texture)
+            try:
                 output, _ = upsampler.enhance(frame, outscale=sr_scale)
                 result_bgr = output
+            except Exception as e:
+                print(f"[Upscale] Frame {frame_idx} failed: {e}, using bicubic")
+                result_bgr = cv2.resize(frame, (target_w, target_h),
+                                        interpolation=cv2.INTER_CUBIC)
             
             # Resize to exact target if needed
             if result_bgr.shape[1] != target_w or result_bgr.shape[0] != target_h:
