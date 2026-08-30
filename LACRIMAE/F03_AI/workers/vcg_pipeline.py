@@ -104,38 +104,26 @@ def vcg_grade(
         print(f"[VCG] VCG pipeline failed: {e}")
         print("[VCG] Falling back to Reinhard color transfer...")
         
-        # ─── Fallback: Reinhard color transfer ──────────────────────
-        # Proven algorithm: matches mean/std of LAB channels
-        # Reference: Reinhard et al. "Transfer of Color between Images" 2001
-        ref_img = cv2.imread(ref_path)
-        if ref_img is None:
-            raise ValueError("Cannot load reference image from bytes")
-        
-        def reinhard_transfer(source, ref):
-            """Transfer color statistics from ref to source using LAB color space."""
-            src_lab = cv2.cvtColor(source, cv2.COLOR_BGR2LAB).astype(np.float32)
-            ref_lab = cv2.cvtColor(ref, cv2.COLOR_BGR2LAB).astype(np.float32)
+        # ─── Fallback: Simple cinematic color grading ─────────────
+        # Safe, predictable: saturation boost + contrast + warm tone
+        def cinematic_grade(frame, sat_boost=1.15, contrast=1.08, warmth=1.03):
+            """Apply subtle cinematic look without destroying skin tones."""
+            # 1. Boost saturation slightly (HSV)
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV).astype(np.float32)
+            hsv[:, :, 1] = np.clip(hsv[:, :, 1] * sat_boost, 0, 255)
+            frame = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
             
-            result = np.copy(src_lab)
-            for ch in range(3):  # L, a, b
-                src_mean, src_std = src_lab[:, :, ch].mean(), src_lab[:, :, ch].std()
-                ref_mean, ref_std = ref_lab[:, :, ch].mean(), ref_lab[:, :, ch].std()
-                
-                src_std = max(src_std, 1e-6)
-                
-                # Transfer: normalize source, then scale to ref stats
-                result[:, :, ch] = (
-                    (src_lab[:, :, ch] - src_mean) * (ref_std / src_std) + ref_mean
-                )
+            # 2. Slight contrast boost
+            frame = cv2.convertScaleAbs(frame, alpha=contrast, beta=0)
             
-            result = np.clip(result, 0, 255).astype(np.uint8)
-            return cv2.cvtColor(result, cv2.COLOR_LAB2BGR)
+            # 3. Warm tone: boost red channel slightly, reduce blue
+            frame = frame.astype(np.float32)
+            frame[:, :, 2] = np.clip(frame[:, :, 2] * warmth, 0, 255)  # R
+            frame[:, :, 0] = np.clip(frame[:, :, 0] / warmth, 0, 255)  # B
+            
+            return frame.astype(np.uint8)
         
-        # Compute reference stats from a sample of the reference image
-        # (resize ref to match source for consistent stats)
-        ref_resized = cv2.resize(ref_img, (width, height))
-        
-        # Read all frames, apply Reinhard transfer
+        # Read all frames, apply cinematic grading
         cap = cv2.VideoCapture(input_path)
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
@@ -145,13 +133,13 @@ def vcg_grade(
             ret, frame = cap.read()
             if not ret:
                 break
-            graded = reinhard_transfer(frame, ref_resized)
+            graded = cinematic_grade(frame)
             out.write(graded)
             frame_count += 1
         
         cap.release()
         out.release()
-        print(f"[VCG] Reinhard fallback applied to {frame_count} frames")
+        print(f"[VCG] Cinematic fallback applied to {frame_count} frames")
     
     # ─── Read output ─────────────────────────────────────────────────
     with open(output_path, "rb") as f:
