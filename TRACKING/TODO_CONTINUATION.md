@@ -1,43 +1,59 @@
-# LACRIMAE dev9 — TODO DE CONTINUATION
+# LACRIMAE dev10 — TODO DE CONTINUATION
 
-> Point d’entrée obligatoire après toute migration de sandbox.
-> Dernière mise à jour : 2026-08-28.
+> Point d'entrée obligatoire après toute migration de sandbox.
+> Dernière mise à jour : 2026-09-09.
 
 ## État confirmé
 
-Le dépôt est `https://github.com/kioka8877-ux/LACRIMAE`, branche `dev9`, commit de référence `8b181fe` (`feat(dev9): implement ranking compilation workflow`). La branche distante `origin/dev9` existe. Le checkout local était propre au moment du contrôle.
+Le dépôt est `https://github.com/kioka8877-ux/LACRIMAE`, branche `dev10`
+(commit de référence `704800b`). dev10 est canonisé **bras armé du mode PUR**
+de PERTURABO (`kioka8877-ux/PERTURABO`, `MONDES_FORGES/CLIPPING`) : le pack
+PUR entre, le MP4 final sort, 100 % GitHub Actions.
 
-Dev9 est dérivé de dev8 et ajoute le format **Ranking Compilation** : six entrées descendantes Top 6 → Top 1, manifeste produit par F00-F, liste persistante dans F03 Preview, transformations par clip, labels configurables, et SFX optionnels par rang. F00-E reste le préparateur des clips ; F00-F est une sous-fregate nouvelle et indépendante.
+Travail PUR réalisé sur la branche de travail `dev10-pur` (commits
+`42a9ebc`, `61b719f` + lot 3) : BridgeClipper v2, F00-PUR ingest, onglet
+PUR F03, rendu F04 parité, workflow `dev10_pur_render.yml`, bridge `--pur`,
+docs (PUR_GATES / PUR_CAMPAIGN_LOG / PUR_IMPLEMENTATION / guide opérateur).
 
-## Contrôles déjà passés
+## Priorités canoniques
 
-| Contrôle | Résultat |
-|---|---|
-| Compilation Python de `f00_ranking.py` et `f00_reveal.py` | OK |
-| Contrat `public/ranking_manifest.json` | OK : `dev9.ranking.v1`, `ranking_compilation`, 6 entrées descendantes |
-| Syntaxe JS F03/F04 Ranking | OK |
-| `pytest -q F00_INGEST/tests/test_ranking.py F00_INGEST/tests/test_reveal.py F00_INGEST/tests/test_manifest.py` | 8 passed |
+1. **Mode PUR — bras armé PERTURABO** (unique mission de dev10) :
+   `F00-PUR → bridge --pur → F03 Preview ⚡ PUR → dev10_pur_render.yml`
+2. **F00H (hook 2 s)** : implémenté, test réel REPORTÉ — non prioritaire.
+   Reprendre via `TRACKING/F00H_GATES.md` quand décidé.
+3. **Test réel Ranking dev9** : hérité de dev9, non exécuté. Non bloquant
+   pour PUR — ne pas mélanger les assets.
 
-## Prochaine étape exacte
+## Prochaine étape exacte (PUR)
 
-Le prochain travail n’est pas une refonte de code. Il faut exécuter le premier **test réel dev9 Ranking** avec six sources réelles :
+Exécuter le premier **E2E PUR réel** :
 
 ```text
-F00-E → F00-F → F00-MUSIC → F03 Preview Ranking → codex validé → F04 PICTOR → F05 → F06
+1. GitHub Actions → "DEV10 PUR — Bras armé PERTURABO" (workflow_dispatch)
+   inputs : pack_filter=pur_A01, canvas=9:16
+2. Vérifier gates G0-G3 (logs F00-PUR) et P2 (MP4 artifact lac-pur-final)
+3. Contrôle visuel : hook 0-3 s sans texte, overlay 2 lignes après le hook,
+   zoom frame-exact ~8.62 s (A01), fade_to_black final
+4. Journaliser dans TRACKING/PUR_CAMPAIGN_LOG.md (ligne pur-A01)
+5. Tag canonique à la validation : pur-canon-v1
 ```
-
-Le premier gate à valider est la sortie F00-E. Ensuite, F00-F doit recevoir le manifeste des clips et un `ranking_request.json` contenant le titre, les labels, les rangs, les durées, les positions, les styles de texte et les SFX facultatifs. Ne pas lancer F04 avant validation visuelle de F03.
 
 ## Contrats à préserver
 
-- `F03_PREVIEW/CODEBASE/public/ranking_manifest.json` : manifeste Ranking consommé par F03.
-- `F00_INGEST/CODEBASE/f00_ranking.py` : normalisation F00-F, rangs maximum 10, scale limité à 10, rotation limitée à ±180°, styles et SFX.
-- `F03_PREVIEW/CODEBASE/src/preview/rankingCompilation.js` et `F03_PICTOR/CODEBASE/src/rankingCompilation.js` : même logique de normalisation et mêmes transformations pour préserver la parité Preview/F04.
-- Les textes configurables doivent être définis au début du workflow ; ils ne doivent pas être codés en dur dans le renderer.
+- Pack PUR : `production_pack_pur_*.json` — propriété PERTURABO F06_DIRECTOR.
+  JAMAIS modifié côté dev10 ; corrections à remonter au monde forge.
+- Manifeste : `dev10.pur.v1` produit par `parsePurPack()` (bridgeClipper.js).
+- Parité preview/render : `_purPackComposition.jsx` identique en F03 et F04.
+- Anti-détection obligatoire (mirror + speed + zoom) — doctrine
+  `_PIEGES_APPRIS_PUR.md` de PERTURABO.
 
 ## Règles de reprise
 
-Toujours travailler sur `dev9`, vérifier `git status --short --branch`, puis lire ce fichier et `TRACKING/LACRIMAE_TRANSFER_LOG.md`. Ne pas mélanger les assets de dev8 avec le run Ranking. Chaque gate doit être journalisé avec son commit, son artifact ou son résultat. En cas de modification de code, tester F00-F, F03 et F04 avant le push.
+Vérifier `git status --short --branch`, lire ce fichier et
+`TRACKING/PUR_IMPLEMENTATION.md`. Chaque gate journalisé avec son commit /
+run CI / artifact. Ne pas lancer F04 avant validation visuelle F03.
+Les assets volumineux (clips téléchargés) ne sont JAMAIS commités : ils
+transitent par les artefacts CI ou les Releases GitHub (SHA-256 si besoin).
 
 ## Migration sandbox
 
@@ -45,9 +61,6 @@ Toujours travailler sur `dev9`, vérifier `git status --short --branch`, puis li
 git clone https://github.com/kioka8877-ux/LACRIMAE.git
 cd LACRIMAE
 git fetch origin --prune
-git checkout dev9
-git pull origin dev9
+git checkout dev10            # ou dev10-pur pour le travail PUR
 cat TRACKING/TODO_CONTINUATION.md
 ```
-
-Les assets volumineux ne doivent pas être ajoutés aveuglément à l’historique Git. Utiliser les artifacts ou une Release avec SHA-256 lorsque le test réel commence ; inscrire l’URL et le checksum dans le registre de transferts.

@@ -96,9 +96,11 @@ MEME_REPOSTS_RANGE = (50, 3000)
 MEME_REPLIES_RANGE = (10, 900)
 
 FRIGATES = {
-    "F02": ROOT / "F02_FORMAT",
+    # dev10 : les frégates réelles sont F02_VISIO / F03_PREVIEW / F04_SIGNUM.
+    # (Les noms F02_FORMAT / F04_RENDER dataient des branches pré-dev10.)
+    "F02": ROOT / "F02_VISIO",
     "F03": ROOT / "F03_PREVIEW",
-    "F04": ROOT / "F04_RENDER",
+    "F04": ROOT / "F04_SIGNUM",
 }
 
 # Deux formats de pack acceptés :
@@ -896,6 +898,105 @@ def build_forge_codex(pack: dict, texts_map: dict, background_name,
     return codex
 
 
+# ─── MODE PUR — bras armé (fetch + conversion manifeste) ───────────────────
+
+def run_pur_mode(args):
+    """Mode PUR : récupère le pack PUR depuis EXPORT PERTURABO, le valide (G0),
+    puis convertit en pur_manifest.json (dev10.pur.v1) via bridgeClipper.js.
+    Le téléchargement du segment VOD reste à F00-PUR (f00_pur.py) — le bridge
+    ne prend QUE le JSON, jamais la vidéo (doctrine mode FORGE)."""
+    section("LAC_BRIDGE_FORGE — MODE PUR (bras armé PERTURABO)")
+    pack_path = Path(args.pack) if args.pack else fetch_pack_from_perturabo(
+        pack_filter=args.pack_filter, mode="pur")
+    pack = json.loads(pack_path.read_text(encoding="utf-8"))
+
+    ok, errors = validate_pur_pack(pack)
+    if not ok:
+        for e in errors:
+            log_err(f"G0 PACK : {e}")
+        print("\n  ══ MODE PUR : ✗ ÉCHOUÉ — pack invalide ══")
+        sys.exit(1)
+    mi = pack["montage_instructions"]
+    segment = mi.get("segment") or pack.get("source") or {}
+    log_ok(f"Pack PUR valide : {pack.get('pack_id', '?')} | "
+           f"angle {pack.get('identite', {}).get('angle_id', '?')} | "
+           f"segment {segment.get('start_sec')}s → {segment.get('end_sec')}s")
+
+    if args.dry_run:
+        print(f"\n[DRY-RUN] Mode PUR : {pack_path} → BRIDGE_PERTURABO/OUT/pur_manifest.json "
+              f"(canvas {args.canvas}). Aucun fichier écrit.")
+        return
+
+    BRIDGE_OUT.mkdir(parents=True, exist_ok=True)
+    manifest = convert_pur_pack_to_manifest(pack, canvas=args.canvas)
+    manifest_path = BRIDGE_OUT / "pur_manifest.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    log_ok(f"pur_manifest.json écrit : {manifest_path} ({manifest['total_frames']} frames)")
+
+    # Transit vers F03/F04 public (preview + rendu consomment le même fichier)
+    transit_pur_manifest(manifest_path)
+
+    print()
+    print("═" * 52)
+    print(" BRIDGE FORGE (MODE PUR) — MISSION ACCOMPLIE")
+    print(f"  Pack      : {pack.get('pack_id', '?')}")
+    print(f"  Manifeste : {manifest_path} → F03/F04 public")
+    print(f"  Prochain  : F00-PUR (f00_pur.py) télécharge le segment VOD,")
+    print("              puis workflow dev10_pur_render → MP4.")
+    print("═" * 52)
+
+
+def validate_pur_pack(pack: dict) -> tuple[bool, list[str]]:
+    """G0 PUR côté bridge — mêmes critères que F00_INGEST/CODEBASE/f00_pur.py."""
+    errors = []
+    if not isinstance(pack, dict):
+        return False, ["pack illisible"]
+    if pack.get("mode") != "pur":
+        errors.append(f"mode={pack.get('mode')!r}, attendu 'pur'")
+    source = pack.get("source") or {}
+    mi = pack.get("montage_instructions") or {}
+    segment = mi.get("segment") or source
+    if not (segment.get("source_url") or source.get("vod_url")):
+        errors.append("vod_url absente")
+    if not mi:
+        errors.append("montage_instructions absente")
+    start = segment.get("start_sec", source.get("start_sec"))
+    end = segment.get("end_sec", source.get("end_sec"))
+    if start is None or end is None or float(end) <= float(start):
+        errors.append("segment invalide (end <= start)")
+    return len(errors) == 0, errors
+
+
+def convert_pur_pack_to_manifest(pack: dict, canvas: str = "9:16") -> dict:
+    """Convertit le pack via bridgeClipper.js (parsePurPack) — même code que la CI."""
+    import subprocess
+    root = Path(__file__).resolve().parent.parent.parent
+    script = root / "tools" / "convert_pur_pack.mjs"
+    if not script.is_file():
+        log_err(f"Script de conversion absent : {script}")
+        sys.exit(1)
+    tmp_pack = BRIDGE_OUT / "pur_pack_in.json"
+    tmp_pack.write_text(json.dumps(pack, ensure_ascii=False), encoding="utf-8")
+    out = BRIDGE_OUT / "pur_manifest.json"
+    cmd = ["node", str(script), "--pack", str(tmp_pack), "--out", str(out), "--canvas", canvas]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        log_err(f"Conversion bridgeClipper échouée :\n{result.stderr}")
+        sys.exit(1)
+    print(result.stdout.strip())
+    return json.loads(out.read_text(encoding="utf-8"))
+
+
+def transit_pur_manifest(manifest_path: Path) -> None:
+    """Copie pur_manifest.json + pur_pack_in.json dans public/ de F03 et F04."""
+    for frigate_public in (FRIGATES["F03"] / "CODEBASE" / "public",
+                           ROOT / "F03_PICTOR" / "CODEBASE" / "public"):
+        if frigate_public.parent.exists():
+            frigate_public.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(manifest_path, frigate_public / "pur_manifest.json")
+            log_ok(f"Transit → {frigate_public / 'pur_manifest.json'}")
+
+
 # ─── MAIN ────────────────────────────────────────────────────────────────────
 
 def main():
@@ -904,12 +1005,22 @@ def main():
                         help="Chemin du production_pack.json — SI ABSENT, le bridge va le "
                              "chercher seul dans PERTURABO/EXPORT (mode Oracle)")
     parser.add_argument("--pack-filter", default=None,
-                        help="Filtre du pack à auto-récupérer (substring du nom, ex: SANDOVAL)")
+                        help="Filtre du pack à auto-récupérer (substring du nom, ex: SANDOVAL, pur_A01)")
     parser.add_argument("--video", help="Vidéo source locale (déposée par l'opérateur)")
     parser.add_argument("--mode", default="logo", choices=["logo", "libre"],
                         help="Mode du pack (défaut logo)")
+    parser.add_argument("--pur", action="store_true",
+                        help="MODE PUR : fetch pack production_pack_pur_*.json → BRIDGE_PERTURABO/IN/ "
+                             "puis conversion en pur_manifest.json (dev10.pur.v1). Rien d'autre.")
+    parser.add_argument("--canvas", default="9:16", choices=["9:16", "16:9", "1:1"],
+                        help="Canvas du manifeste PUR (défaut 9:16)")
     parser.add_argument("--dry-run", action="store_true", help="Affiche le plan sans écrire")
     args = parser.parse_args()
+
+    # ════════════════ MODE PUR (bras armé) ════════════════
+    if args.pur:
+        run_pur_mode(args)
+        return
 
     section("LAC_BRIDGE_FORGE — import du pack Perturabo")
     log_controle("CONTRÔLE 1 — VALIDATION DU PACK")
