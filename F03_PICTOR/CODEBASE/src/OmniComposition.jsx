@@ -19,6 +19,7 @@ import { hybridTimelineFrame, hybridEgoStyle, hybridTextStyle } from './hybridNa
 import { normalizeMusicTimeline, buildAudioSegments } from './audioTimeline';
 import { normalizeRevealManifest, revealSceneAtFrame, revealSourceForScene, revealMotionTransform } from './revealCompilation';
 import { normalizeRankingManifest, rankingEntryAtFrame, rankingActiveRows, rankingMotionTransform } from './rankingCompilation';
+import { PurPackComposition } from './_purPackComposition';
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
  * OmniComposition (F03 PREVIEW) â€” mÃªmes 6 calques que F04 RENDER :
@@ -153,7 +154,10 @@ function RevealCompilationComposition({ codex, session: sessionProp, revealManif
   );
 }
 
-export const OmniComposition = ({ codex, videoSrc, session: sessionProp, sequences, hybridManifest, hybridIntroSrc, musicTimeline, revealManifest }) => {
+export const OmniComposition = ({ codex, videoSrc, session: sessionProp, sequences, hybridManifest, hybridIntroSrc, musicTimeline, revealManifest, purManifest }) => {
+  if (sessionProp?.review_mode === 'pur_pack' || purManifest?.mode === 'pur_pack') {
+    return <PurPackComposition purManifest={purManifest || sessionProp?.pur_manifest} />;
+  }
   if (sessionProp?.review_mode === 'ranking_compilation' || revealManifest?.mode === 'ranking_compilation') {
     return <RankingCompilationComposition session={sessionProp} rankingManifest={revealManifest || sessionProp?.ranking} musicTimeline={musicTimeline} />;
   }

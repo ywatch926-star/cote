@@ -1,0 +1,144 @@
+name: DEV10 PUR — Bras armé PERTURABO (pack → MP4)
+
+# Pattern éprouvé dev9_ranking_render.yml — zéro Modal, tout en CI.
+# PERTURABO EXPORT → F00-PUR (yt-dlp sections) → bridgeClipper → Remotion → MP4.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pack_filter:
+        description: 'Filtre du pack dans EXPORT PERTURABO (ex: pur_A01, vide = plus récent)'
+        required: false
+        default: 'pur_A01'
+        type: string
+      canvas:
+        description: 'Format de sortie'
+        required: false
+        default: '9:16'
+        type: choice
+        options:
+          - 9:16
+          - 16:9
+          - 1:1
+      perturabo_branch:
+        description: 'Branche PERTURABO à lire'
+        required: false
+        default: 'main'
+        type: string
+      max_duration:
+        description: 'Durée max du rendu en secondes (0 = durée complète)'
+        required: false
+        default: '0'
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PERTURABO_REPO: kioka8877-ux/PERTURABO
+  PERTURABO_EXPORT: MONDES_FORGES/CLIPPING/EXPORT
+
+jobs:
+  pur-render:
+    name: F00-PUR + BridgeClipper + F04 Render
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout LACRIMAE dev10
+        uses: actions/checkout@v4
+        with:
+          ref: dev10
+
+      - name: Récupérer le pack PUR depuis PERTURABO EXPORT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILTER: ${{ inputs.pack_filter }}
+          BRANCH: ${{ inputs.perturabo_branch }}
+        run: |
+          mkdir -p BRIDGE_PERTURABO/IN
+          PACKS=$(gh api "repos/${PERTURABO_REPO}/contents/${PERTURABO_EXPORT}?ref=${BRANCH}" \
+            --jq '[.[] | select(.name | startswith("production_pack_pur_")) | .name]')
+          echo "Packs PUR disponibles : ${PACKS}"
+          if [ "${FILTER}" != "" ]; then
+            PACK=$(echo "${PACKS}" | jq -r --arg f "${FILTER}" '[.[] | select(contains($f))] | sort | .[-1] // empty')
+          fi
+          if [ "${PACK:-}" = "" ]; then
+            PACK=$(echo "${PACKS}" | jq -r 'sort | .[-1]')
+          fi
+          echo "Pack sélectionné : ${PACK}"
+          gh api "repos/${PERTURABO_REPO}/contents/${PERTURABO_EXPORT}/${PACK}?ref=${BRANCH}" \
+            --jq .content | base64 -d > "BRIDGE_PERTURABO/IN/${PACK}"
+          echo "PACK_PATH=BRIDGE_PERTURABO/IN/${PACK}" >> "$GITHUB_ENV"
+          echo "PACK_NAME=${PACK}" >> "$GITHUB_ENV"
+
+      - name: Installer ffmpeg + yt-dlp
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pipx install yt-dlp || pip install --user yt-dlp
+          yt-dlp --version
+
+      - name: F00-PUR — Télécharger le segment VOD (gates G0-G3)
+        run: |
+          python3 F00_INGEST/CODEBASE/f00_pur.py \
+            --pack "${{ env.PACK_PATH }}" \
+            --out F03_PICTOR/CODEBASE/public/clips \
+            --clip-name "pur_$(echo "${{ env.PACK_NAME }}" | grep -oE 'A0[0-9]+' | head -1 || echo clip).mp4"
+
+      - name: BridgeClipper — pack PUR → pur_manifest.json
+        working-directory: F03_PREVIEW/CODEBASE
+        run: |
+          node ../../tools/convert_pur_pack.mjs \
+            --pack "../../${{ env.PACK_PATH }}" \
+            --out public/pur_manifest.json \
+            --canvas "${{ inputs.canvas }}" \
+            --clip "clips/pur_$(echo "${{ env.PACK_NAME }}" | grep -oE 'A0[0-9]+' | head -1 || echo clip).mp4"
+
+      - name: Injecter pur_manifest dans codex.json
+        run: |
+          python3 - << 'PYEOF'
+          import json
+          from pathlib import Path
+          codex_path = Path('F03_PICTOR/CODEBASE/public/codex.json')
+          d = json.loads(codex_path.read_text()) if codex_path.exists() else {}
+          manifest = json.loads(Path('F03_PREVIEW/CODEBASE/public/pur_manifest.json').read_text())
+          d['pur_manifest'] = manifest
+          d.setdefault('session', {})['review_mode'] = 'pur_pack'
+          d.setdefault('clips', [{}])[0].setdefault('video', {})['fps'] = manifest.get('fps', 30)
+          codex_path.parent.mkdir(parents=True, exist_ok=True)
+          codex_path.write_text(json.dumps(d, indent=2) + '\n')
+          print(f"codex.json : pur_manifest injecté ({manifest['total_frames']} frames, mode pur_pack)")
+          PYEOF
+          cp F03_PREVIEW/CODEBASE/public/pur_manifest.json F03_PICTOR/CODEBASE/src/data/pur_manifest.json
+
+      - name: Rendre le MP4 F04 (Remotion)
+        working-directory: F03_PICTOR/CODEBASE
+        env:
+          MAX_DURATION: ${{ inputs.max_duration }}
+        run: |
+          npm ci
+          npm run build:pur 2>/dev/null || true
+          if [ "${MAX_DURATION}" != "0" ] && [ -n "${MAX_DURATION}" ]; then
+            npx remotion render src/index.jsx LacrimaeShort out/lac_pur_final.mp4 \
+              --frames=0-$(python3 -c "print(int(${MAX_DURATION} * 30))") --concurrency=1
+          else
+            npx remotion render src/index.jsx LacrimaeShort out/lac_pur_final.mp4 --concurrency=1
+          fi
+          ls -lh out/
+
+      - name: Upload artifact MP4
+        uses: actions/upload-artifact@v4
+        with:
+          name: lac-pur-final-${{ inputs.pack_filter || 'latest' }}
+          path: F03_PICTOR/CODEBASE/out/lac_pur_final.mp4
+          retention-days: 14
+
+      - name: Upload manifestes (traçabilité)
+        uses: actions/upload-artifact@v4
+        with:
+          name: lac-pur-manifests-${{ inputs.pack_filter || 'latest' }}
+          path: |
+            F03_PREVIEW/CODEBASE/public/pur_manifest.json
+            F03_PICTOR/CODEBASE/public/clips/pur_sources.json
+          retention-days: 30

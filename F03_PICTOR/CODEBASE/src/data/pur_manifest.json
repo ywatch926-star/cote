@@ -1,0 +1,23 @@
+{
+  "schema_version": "dev10.pur.v1",
+  "mode": "pur_pack",
+  "fps": 30,
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "aspect": "9:16"
+  },
+  "narrative": {
+    "category": "",
+    "energy_level": "",
+    "overlay": {
+      "lines": []
+    }
+  },
+  "entries": [],
+  "rank_count": 0,
+  "final_rank": null,
+  "duration_seconds": 0,
+  "total_frames": 0,
+  "pur": {}
+}

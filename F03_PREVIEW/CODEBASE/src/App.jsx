@@ -6,6 +6,7 @@ import { normalizeHybridManifest } from './preview/hybridNarrative';
 import { normalizeMusicTimeline, musicWaveformPoints } from './preview/audioTimeline';
 import { normalizeRevealManifest } from './preview/revealCompilation';
 import { normalizeRankingManifest } from './preview/rankingCompilation';
+import { parsePurPack } from './preview/bridgeClipper';
 
 /**
  * App — F03 PREVIEW (v4.0 — session + clips)
@@ -46,6 +47,9 @@ export default function App() {
   const [hybridIntroSrc, setHybridIntroSrc] = useState('');
   const [revealManifest, setRevealManifest] = useState(null);
   const [rankingManifest, setRankingManifest] = useState(null);
+  const [purPackRaw, setPurPackRaw] = useState(null);      // production_pack_pur_*.json brut (PERTURABO)
+  const [purManifest, setPurManifest] = useState(null);    // manifeste dev10.pur.v1 converti
+  const [purCanvas, setPurCanvas] = useState('9:16');      // 9:16 | 16:9 | 1:1
   const [audioSrc, setAudioSrc] = useState('');
   const [audioPosition, setAudioPosition] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
@@ -112,7 +116,14 @@ export default function App() {
         } catch (_) {
           if (full.session?.ranking) setRankingManifest(full.session.ranking);
         }
-        setActiveTab(full.session?.review_mode === 'hybrid_narrative' ? 'hybrid' : full.session?.review_mode === 'reveal_compilation' ? 'reveal' : full.session?.review_mode === 'ranking_compilation' ? 'ranking' : 'text');
+        try {
+          const purResp = await fetch('./pur_manifest.json');
+          if (purResp.ok) setPurManifest(await purResp.json());
+          else if (full.session?.pur_manifest) setPurManifest(full.session.pur_manifest);
+        } catch (_) {
+          if (full.session?.pur_manifest) setPurManifest(full.session.pur_manifest);
+        }
+        setActiveTab(full.session?.review_mode === 'hybrid_narrative' ? 'hybrid' : full.session?.review_mode === 'reveal_compilation' ? 'reveal' : full.session?.review_mode === 'ranking_compilation' ? 'ranking' : full.session?.review_mode === 'pur_pack' ? 'pur' : 'text');
         setVideoSrc(clipFirst.video?.source ? './' + clipFirst.video.source : './video_source.mp4');
         try {
           const motionResp = await fetch('./motion_slow_manifest.json');
@@ -234,6 +245,24 @@ export default function App() {
     });
   };
   const updateRankingNarrative = (key, value) => updateRanking({ narrative: { ...(rankingManifest?.narrative || {}), [key]: value } });
+  // PUR : convertit un pack PERTURABO brut en manifeste dev10.pur.v1 côté navigateur
+  const convertPurPack = (pack, canvas) => {
+    if (!pack) return;
+    const manifest = parsePurPack(pack, { fps, canvas: canvas || purCanvas, clipFiles: [`clips/pur_${pack.identite?.angle_id || pack.pack_id || 'clip'}.mp4`] });
+    setPurManifest(manifest);
+    setSession((s) => ({ ...s, review_mode: 'pur_pack', pur_manifest: manifest }));
+    setActiveTab('pur');
+  };
+  const updatePurOverlayLine = (lineIndex, text) => {
+    setPurManifest((current) => {
+      if (!current) return current;
+      const lines = [...(current.narrative?.overlay?.lines || [])];
+      lines[lineIndex] = text;
+      const next = { ...current, narrative: { ...current.narrative, overlay: { ...current.narrative?.overlay, lines } } };
+      setSession((s) => ({ ...s, pur_manifest: next }));
+      return next;
+    });
+  };
   const updateRankingEntry = (index, patch) => {
     const entries = [...(rankingManifest?.entries || [])];
     entries[index] = { ...(entries[index] || {}), ...patch };
@@ -481,12 +510,14 @@ export default function App() {
       ...merged,
       session: {
         ...session,
-        review_mode: activeRanking ? 'ranking_compilation' : activeReveal ? 'reveal_compilation' : session.review_mode,
+        review_mode: activeRanking ? 'ranking_compilation' : activeReveal ? 'reveal_compilation' : reviewMode === 'pur_pack' ? 'pur_pack' : session.review_mode,
         ...(activeRanking ? { ranking: activeRanking } : {}),
         ...(activeReveal ? { reveal: activeReveal } : {}),
+        ...(reviewMode === 'pur_pack' && purManifest ? { pur_manifest: purManifest } : {}),
       },
       reveal_manifest: activeReveal || revealManifest || null,
       ranking_manifest: activeRanking || rankingManifest || null,
+      pur_manifest: reviewMode === 'pur_pack' ? purManifest : null,
       virtual_sequences: sequences || null,
       validated_by_magos: validated,
     };
@@ -537,7 +568,7 @@ export default function App() {
             <Player
               ref={playerRef}
               component={OmniComposition}
-              inputProps={{ codex: clip, videoSrc, session, sequences, hybridManifest: activeHybrid, hybridIntroSrc, musicTimeline: music, revealManifest: activeReveal || activeRanking }}
+              inputProps={{ codex: clip, videoSrc, session, sequences, hybridManifest: activeHybrid, hybridIntroSrc, musicTimeline: music, revealManifest: activeReveal || activeRanking, purManifest: reviewMode === 'pur_pack' ? purManifest : null }}
               durationInFrames={totalFrames}
               fps={fps}
               compositionWidth={vidWidth}
@@ -639,6 +670,9 @@ export default function App() {
             </button>
             <button style={activeTab === 'ranking' ? styles.tabActive : styles.tab} onClick={() => { setActiveTab('ranking'); updateReviewMode('ranking_compilation'); }}>
               # Ranking
+            </button>
+            <button style={activeTab === 'pur' ? styles.tabActive : styles.tab} onClick={() => { setActiveTab('pur'); if (reviewMode !== 'pur_pack') setSession((s) => ({ ...s, review_mode: 'pur_pack' })); }}>
+              ⚡ PUR
             </button>
             <button style={activeTab === 'fond' ? styles.tabActive : styles.tab} onClick={() => setActiveTab('fond')}>
               🖼 Fond & Logo
@@ -872,6 +906,94 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {/* ══════════ PUR : bras armé PERTURABO ══════════ */}
+          {activeTab === 'pur' && (() => {
+            const purInfo = purManifest?.pur || {};
+            const anti = purManifest?.entries?.[0]?.anti_detection || {};
+            const overlayLines = purManifest?.narrative?.overlay?.lines || [];
+            const hasPack = Boolean(purManifest?.entries?.length);
+            return (
+              <div style={styles.panelContent}>
+                <label style={{ ...styles.label, color: '#66ddff', fontSize: '14px' }}>⚡ MODE PUR — PERTURABO → LACRIMAE</label>
+                <div style={{ color: '#aaa', fontSize: 12, lineHeight: 1.45 }}>
+                  Pack PUR (production_pack_pur_*.json) → manifeste dev10.pur.v1 → clip plein écran,
+                  hook 0-3s (visage, pas de texte), overlay 2 lignes après le hook, zooms frame-exacts, anti-détection.
+                </div>
+
+                <div style={{ marginTop: 10, padding: 8, border: '1px solid #1a4a5a', borderRadius: 7, background: '#081820' }}>
+                  <label style={{ ...styles.label, color: '#66ddff', fontSize: 12 }}>📥 CHARGER UN PACK PUR</label>
+                  <label style={{ ...styles.uploadLabel, marginTop: 8 }}>
+                    {purPackRaw ? `Pack chargé : ${purPackRaw.pack_id || '?'} (${purPackRaw.identite?.angle_id || '—'})` : 'Déposer production_pack_pur_*.json (EXPORT PERTURABO)'}
+                    <input type="file" accept=".json" style={{ display: 'none' }} onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        try {
+                          const pack = JSON.parse(String(reader.result));
+                          setPurPackRaw(pack);
+                          convertPurPack(pack, purCanvas);
+                        } catch (err) {
+                          setError('Pack PUR invalide : ' + err.message);
+                        }
+                      };
+                      reader.readAsText(file);
+                    }} />
+                  </label>
+                  {purPackRaw && (
+                    <button style={{ ...styles.button, marginTop: 6 }} onClick={() => convertPurPack(purPackRaw, purCanvas)}>
+                      ↻ Reconvertir le pack ({purCanvas})
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ marginTop: 10, padding: 8, border: '1px solid #1a4a5a', borderRadius: 7, background: '#081820' }}>
+                  <label style={{ ...styles.label, color: '#66ddff', fontSize: 12 }}>🖼️ FORMAT DE SORTIE</label>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    {['9:16', '16:9', '1:1'].map((fmt) => (
+                      <button key={fmt} style={{ ...(purCanvas === fmt ? styles.tabActive : styles.tab), flex: 1 }}
+                        onClick={() => { setPurCanvas(fmt); if (purPackRaw) convertPurPack(purPackRaw, fmt); }}>
+                        {fmt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {hasPack && (
+                  <>
+                    <div style={{ marginTop: 10, padding: 8, border: '1px solid #1a4a5a', borderRadius: 7, background: '#081820' }}>
+                      <label style={{ ...styles.label, color: '#66ddff', fontSize: 12 }}>✍️ OVERLAY (après le hook)</label>
+                      {overlayLines.map((line, index) => (
+                        <input key={`pur_ol_${index}`} style={{ ...styles.input, marginTop: 6 }} value={line}
+                          onChange={(e) => updatePurOverlayLine(index, e.target.value)} />
+                      ))}
+                      {!overlayLines.length && <div style={{ color: '#ff9f66', fontSize: 12, marginTop: 4 }}>Aucune ligne d'overlay dans le pack.</div>}
+                    </div>
+
+                    <div style={{ marginTop: 10, padding: 8, border: '1px solid #1a4a5a', borderRadius: 7, background: '#081820' }}>
+                      <label style={{ ...styles.label, color: '#66ddff', fontSize: 12 }}>🛡️ ANTI-DÉTECTION (pack)</label>
+                      <div style={{ color: '#ccc', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>
+                        Mirror : {anti.mirror ? '✅ activé' : '—'} · Speed : {anti.speed || 1}x · Crop : {anti.crop_pct || 0}%<br />
+                        Hook : {purInfo.hook?.duration_sec ?? 3}s · Zooms : {purManifest?.entries?.[0]?.zooms?.length || 0} · SFX : {purManifest?.entries?.[0]?.sfx_list?.length || 0}<br />
+                        Source : {purInfo.platform || '—'} · {purInfo.angle_id || '—'} · {purInfo.generator || '—'}
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 10, padding: 8, border: '1px solid #1a4a5a', borderRadius: 7, background: '#081820' }}>
+                      <label style={{ ...styles.label, color: '#66ddff', fontSize: 12 }}>🔗 SOURCE VOD</label>
+                      <div style={{ color: '#ccc', fontSize: 11, marginTop: 4, wordBreak: 'break-all' }}>{purInfo.source || '—'}</div>
+                      <div style={{ color: '#8ac', fontSize: 11, marginTop: 4 }}>
+                        Segment : {purInfo.start_sec ?? '—'}s → {purInfo.end_sec ?? '—'}s<br />
+                        Le workflow dev10_pur_render télécharge ce segment (F00-PUR, yt-dlp sections).
+                      </div>
+                    </div>
+                  </>
+                )}
+                {!hasPack && <div style={{ color: '#ff9f66', fontSize: 12, padding: 8 }}>Aucun pack PUR converti. Dépose un production_pack_pur_*.json ci-dessus (ou place pur_manifest.json dans public/).</div>}
+              </div>
+            );
+          })()}
 
           {/* ══════════ HYBRID / EGO : mode narratif séparé ══════════ */}
           {activeTab === 'hybrid' && (

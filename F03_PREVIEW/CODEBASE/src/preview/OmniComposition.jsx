@@ -24,6 +24,7 @@ import { RankingSplitComposition } from './_rankingSplitComposition';
 import { BlurComposition } from './_blurComposition';
 import { reframingPushInScale, reframingVideoStyle, REFRAMING_DEFAULTS } from './reframingMode';
 import { parseMontageInstructions, parseProductionPack } from './bridgeClipper';
+import { PurPackComposition } from './_purPackComposition';
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
  * OmniComposition (F03 PREVIEW) â€” mÃªmes 6 calques que F04 RENDER :
@@ -122,7 +123,7 @@ function RevealCompilationComposition({ codex, session: sessionProp, revealManif
   );
 }
 
-export const OmniComposition = ({ codex, videoSrc, session: sessionProp, sequences, hybridManifest, hybridIntroSrc, musicTimeline, revealManifest }) => {
+export const OmniComposition = ({ codex, videoSrc, session: sessionProp, sequences, hybridManifest, hybridIntroSrc, musicTimeline, revealManifest, purManifest }) => {
   // REFRAMING mode — zoom to fill 9:16 with slow push in
   const reframingCfg = sessionProp.reframing || codex?.reframing || {};
   if (reframingCfg.enabled || sessionProp?.review_mode === 'reframing' || revealManifest?.mode === 'reframing') {
@@ -134,6 +135,11 @@ export const OmniComposition = ({ codex, videoSrc, session: sessionProp, sequenc
   const blurCfg = sessionProp.blur || codex?.blur || {};
   if (blurCfg.enabled || sessionProp?.review_mode === 'blur' || revealManifest?.mode === 'blur') {
     return <BlurComposition session={sessionProp} codex={codex} />;
+  }
+
+  // PUR mode — packs PERTURABO convertis (manifeste dev10.pur.v1)
+  if (sessionProp?.review_mode === 'pur_pack' || purManifest?.mode === 'pur_pack') {
+    return <PurPackComposition purManifest={purManifest} session={sessionProp} />;
   }
 
   if (sessionProp?.review_mode === 'ranking_compilation' || revealManifest?.mode === 'ranking_compilation') {
