@@ -1,0 +1,41 @@
+{
+  "schema_version": "dev10.broll-registry.v1",
+  "name": "Registre B-roll numéroté — la bibliothèque vit chez le bras armé",
+  "doctrine": "PERTURABO ne voit JAMAIS les B-rolls. Il écrit l'ÉMOTION à illustrer (moqueur, triomphant, chute...) et le numéro ('met le numéro 1'). Le bras armé sait seul quel fichier se cache derrière. Un B-roll sans flash d'entrée + SFX couplé n'existe pas.",
+  "clips": {
+    "1": {
+      "file": "broll/broll_01.mp4",
+      "label": "Gigachad approbation",
+      "emotions": ["moqueur", "triomphant", "validation"],
+      "duration_frames_max": 45,
+      "sfx": "impact",
+      "entry_flash": true
+    },
+    "2": {
+      "file": "broll/broll_02.mp4",
+      "label": "Facepalm désespoir",
+      "emotions": ["chute", "second_degre", "defaite"],
+      "duration_frames_max": 45,
+      "sfx": "impact",
+      "entry_flash": true
+    },
+    "3": {
+      "file": "broll/broll_03.mp4",
+      "label": "Explosion meme",
+      "emotions": ["climax", "surprise", "energie"],
+      "duration_frames_max": 45,
+      "sfx": "boom",
+      "entry_flash": true
+    },
+    "4": {
+      "file": "broll/broll_04.mp4",
+      "label": "Clapping sarcastique",
+      "emotions": ["moqueur", "ironie"],
+      "duration_frames_max": 45,
+      "sfx": "impact",
+      "entry_flash": true
+    }
+  },
+  "placeholder_mode": true,
+  "placeholder_note": "Les fichiers .mp4 ne sont PAS commités (règle : jamais d'assets volumineux dans git). Registre opérationnel dès que l'opérateur dépose les clips dans BROLL/FILES/."
+}

@@ -149,3 +149,4 @@ swell continu (montée douce → retour doux, jamais un zoom brutal), agrégatio
 
 - **[SPEC CAVIAR 99 %]**(`TRACKING/CAVIAR_SPEC_PERTURABO.md`) — contrat de montage narratif PERTURABO <-> LACRIMAE (7 cuts, 4 piliers, schema JSON cible, doctrine des roles). Cadrage uniquement.
 - **[GATES CAVIAR]**(`TRACKING/CAVIAR_GATES.md`) — porte P-CAV (budgets bloquants) + Directeur (analyse advisory) — Groupe 1 implemente.
+- **[HEISENBERG]**(`F03_PICTOR/HEISENBERG/README.md`) + **[PLAN]**(`TRACKING/HEISENBERG_PLAN.md`) + **[GATES]**(`TRACKING/HEISENBERG_GATES.md`) — sous-fregate Caviar embarquee dans F03_PICTOR : recoit les videos finies, emet un `caviar_manifest_<stem>.json` par video (Budget d'Attention 100 u, B-roll numerote, ledger). Groupe 2 implemente.

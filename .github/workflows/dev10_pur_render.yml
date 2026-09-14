@@ -280,6 +280,17 @@ jobs:
           cat F03_PICTOR/OUT/pur_aggregate_report.json || true
           exit 1
 
+      - name: HEISENBERG — manifeste caviar par vidéo finale (advisory)
+        if: steps.aggregate.outcome == 'success'
+        run: |
+          # La sous-frégate analyse les MP4 finis et émet un caviar_manifest par vidéo.
+          # Échec non bloquant : la frégate conseille, elle ne bloque pas la livraison.
+          python3 F03_PICTOR/HEISENBERG/heisenberg.py \
+            --batch F03_PICTOR/OUT \
+            --out F03_PICTOR/HEISENBERG/OUT \
+            --no-whisper \
+          || echo '⚠ HEISENBERG : analyse indisponible (advisory) — bundle publié quand même.'
+
       - name: Upload bundle final lac-pur-final (N MP4 + manifestes + rapport)
         if: steps.aggregate.outcome == 'success'
         uses: actions/upload-artifact@v4

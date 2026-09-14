@@ -1,7 +1,7 @@
 # LACRIMAE dev10 — TODO DE CONTINUATION
 
 > Point d'entrée obligatoire après toute migration de sandbox.
-> Dernière mise à jour : 2026-09-12.
+> Dernière mise à jour : 2026-09-14.
 
 ## État confirmé
 
@@ -19,9 +19,16 @@ docs (PUR_GATES / PUR_CAMPAIGN_LOG / PUR_IMPLEMENTATION / guide opérateur).
 
 1. **Mode PUR — bras armé PERTURABO** (unique mission de dev10) :
    `F00-PUR → bridge --pur → F03 Preview ⚡ PUR → dev10_pur_render.yml`
-2. **F00H (hook 2 s)** : implémenté, test réel REPORTÉ — non prioritaire.
+2. **HEISENBERG (sous-frégate Caviar, 2026-09-14)** : implémentée et
+   opérationnelle dans `F03_PICTOR/HEISENBERG/` — voir
+   `TRACKING/HEISENBERG_PLAN.md` + `TRACKING/HEISENBERG_GATES.md`.
+   Émet un `caviar_manifest_<stem>.json` par vidéo finale ; étape CI
+   advisory branchée après l'agrégation. Phases restantes : Groupe 3
+   (rendu narratif du pack — B-roll numéroté au rendu, jump cuts,
+   ducking) puis Groupe 4 (conservation ARCHIVUM/narrativum).
+3. **F00H (hook 2 s)** : implémenté, test réel REPORTÉ — non prioritaire.
    Reprendre via `TRACKING/F00H_GATES.md` quand décidé.
-3. **Test réel Ranking dev9** : hérité de dev9, non exécuté. Non bloquant
+4. **Test réel Ranking dev9** : hérité de dev9, non exécuté. Non bloquant
    pour PUR — ne pas mélanger les assets.
 
 ## Prochaine étape exacte (PUR)

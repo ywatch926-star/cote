@@ -1,7 +1,9 @@
 # LACRIMAE dev10 — GATES CAVIAR (P-CAV) — Montage narratif
 
 **Spec mère** : `TRACKING/CAVIAR_SPEC_PERTURABO.md` · **Code** : `F00_INGEST/CODEBASE/caviar.py`
-**Statut (2026-09-13)** : Groupe 1 implémenté (Directeur + Porte P-CAV) — Phase 3 (rendu B-roll/narratif) non démarrée.
+**Statut (2026-09-14)** : Groupe 1 implémenté (Directeur + Porte P-CAV) + **Groupe 2 : HEISENBERG** —
+sous-frégate d'émission opérationnelle (`F03_PICTOR/HEISENBERG/`, voir `TRACKING/HEISENBERG_GATES.md`)
+qui consomme le Directeur et émet un caviar_manifest par vidéo finale. Phase 3 (rendu B-roll/narratif) non démarrée.
 **Doctrine** : PERTURABO = le OÙ/QUOI · LACRIMAE = le COMMENT · Warsmith tranche.
 **Champs narratifs absents du pack = bypass intégral** (packs v1 inchangés).
 
@@ -43,6 +45,10 @@ chaque budget bloquant, schéma, clusters RMS synthétiques, détection de silen
 
 ## Phases restantes (GO opérateur requis, une par une)
 
-- **Phase 3 — Rendu narratif** : Jump Cuts (table source↔timeline + recalcul G2/agrégation), ducking audio, rupture d'overlay au climax, rendu B-roll (≤45 frames, flash entrée, SFX couplé).
-- **Phase 5 — Pacing intelligent** : densité des trims pilotée par `energy_curve`.
-- **Phase 4 — Flow/Match cut** : reporté jusqu'à preuve de rétention des phases précédentes.
+- **Groupe 3 — Rendu narratif** : Jump Cuts (table source↔timeline + recalcul G2/agrégation), ducking audio, rupture d'overlay au climax, rendu B-roll NUMÉROTÉ (registre Heisenberg : « met le numéro 1 » → flash entrée + SFX couplé, ≤45 frames).
+- **Groupe 4 — Conservation** : ARCHIVUM/narrativum (gate_history, retention_log A/B caviar vs basique, lessons) + Pacing intelligent (densité des trims pilotée par `energy_curve`).
+- **Flow/Match cut** : reporté jusqu'à preuve de rétention des groupes précédents.
+
+> Mise à jour 2026-09-14 : les constantes de budget sont désormais partagées via
+> `F03_PICTOR/HEISENBERG/caviar_budget.json` (source de vérité unique — double
+> barrage frégate/gates). Les constantes de `caviar.py` restent alignées.

@@ -214,3 +214,28 @@ overlay boxé unique 44px à y 11%.
   retablie (avant : A03 audio +1,3 s de derive, contenu epuise en ~14,3 s).
 - startFrom=0 verifie : 6 s de timeline = 6 s de contenu reel, plus de course.
 - mute_bg verifie : une seule piste vocale dans le mux.
+
+### 2026-09-14 — HEISENBERG : sous-frégate Caviar opérationnelle (Groupe 2)
+
+- **Nouvelle frégate embarquée dans F03_PICTOR** (`F03_PICTOR/HEISENBERG/`) :
+  reçoit les vidéos FINIES (sortie F03, validées par le gate qui suit), les
+  analyse via le Directeur Caviar (Groupe 1, zéro doublon) et émet un
+  `caviar_manifest_<stem>.json` par vidéo finale — verdict OK/BLOCKED/REFUSED,
+  Budget d'Attention (100 u, dépense ≤ 55 u), propositions advisory
+  (jump cuts, smash audio, punchline whisper).
+- **Budget d'Attention en fichier unique** (`caviar_budget.json`) : même
+  source pour la frégate (refus à l'émission) et les gates P-CAV du bras
+  armé (rouge au rendu si divergence) — double barrage voulu par le Warsmith.
+- **B-roll NUMÉROTÉ** : PERTURABO ne voit jamais les fichiers. Il écrit
+  l'émotion + « met le numéro 1 » ; Heisenberg résout le numéro, pose le
+  flash blanc à l'ENTRÉE (jamais à la sortie) et le SFX couplé sur la même
+  frame. Pas de vidéo dans BROLL/FILES/ = pas de B-roll proposé.
+- **> 8 silences = REFUS** : « segment mauvais, prends un autre » — aucun
+  manifeste toxique émis, diagnostic copié dans OUT/hold/.
+- **CI** : étape advisory après l'agrégation dans `dev10_pur_render.yml`
+  (échec non bloquant — la frégate conseille, la livraison passe).
+- **Tests** : `test_heisenberg.py` 20/20 verts + `test_caviar.py` Groupe 1
+  inchangé et vert (non-régression vérifiée).
+- Doctrine rappelée : Heisenberg propose ; PERTURABO tranche le OÙ/QUOI ;
+  Warsmith valide au gate. Prochain groupe (3) : le rendu narratif —
+  B-roll numéroté au rendu, jump cuts, ducking.

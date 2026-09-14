@@ -1,0 +1,53 @@
+{
+  "schema_version": "dev10.caviar-budget.v1",
+  "name": "Budget d'Attention — doctrine Caviar 99%",
+  "note": "Fichier UNIQUE de constantes. LACRIMAE l'ingère dans ses gates P-CAV (double barrage : la frégate refuse à l'émission, les gates rouges au rendu si divergence). PERTURABO lit les mêmes chiffres pour composer ses packs.",
+  "clip_reference_duration_sec": 30,
+  "total_budget_units": 100,
+  "max_spend_units": 55,
+  "events": {
+    "broll": {
+      "label": "B-roll + flash + SFX (le trio inséparable)",
+      "cost_units": 12,
+      "max_per_clip": 3,
+      "max_frames": 45,
+      "flash_position": "broll_entry_only",
+      "sfx": "obligatoire_si_flash"
+    },
+    "smash": {
+      "label": "Smash audio (ducking au climax)",
+      "cost_units": 8,
+      "max_per_clip": 2
+    },
+    "punchin": {
+      "label": "Punch-in (zoom)",
+      "cost_units": 6,
+      "max_per_clip": 4,
+      "min_gap_sec": 2.0
+    },
+    "jumpcut": {
+      "label": "Jump cut (trim silence)",
+      "cost_units": 1,
+      "max_per_clip": 8
+    }
+  },
+  "flash": {
+    "max_per_clip": 3,
+    "min_gap_sec": 1.5,
+    "position": "broll_entry_only",
+    "coupling": "SFX obligatoire sur la même frame"
+  },
+  "silences": {
+    "max_before_refusal": 8,
+    "min_duration_sec": 0.25,
+    "refusal_message": "segment mauvais, prends un autre"
+  },
+  "breathing": {
+    "min_source_ratio": 0.6,
+    "note": "100 - dépense = respiration. La source seule occupe >= 60-70% de la timeline."
+  },
+  "unique_element_rule": {
+    "window_sec": 0.05,
+    "note": "Jamais 2 événements visuels forts sur la même frame."
+  }
+}
