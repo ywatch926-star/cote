@@ -1,0 +1,52 @@
+{
+  "_exemple": "EXEMPLE PEDAGOGIQUE — ce que Heisenberg emet pour CHAQUE video finale reelle. Genere par : python3 heisenberg.py --manifest <video_finie.mp4>",
+  "schema_version": "dev10.caviar.v1",
+  "generated_at": "2026-09-14T08:00:00+00:00",
+  "generator": "HEISENBERG (sous-fregate Caviar — F03_PICTOR)",
+  "source_file": "pur_A01_finale.mp4",
+  "probe": { "codec": "h264", "width": 1080, "height": 1920, "duration_sec": 28.629, "has_audio": true },
+  "verdict": "OK",
+  "entry_gate": { "ok": true, "errors": [] },
+  "analysis": {
+    "silence_count": 2,
+    "speech_ratio": 0.91,
+    "climax_candidates": [14.2],
+    "whisper": { "available": true, "punchline_proposal_sec": 21.4 }
+  },
+  "budget": {
+    "total_units": 100,
+    "spend_units": 29,
+    "breathing_units": 71,
+    "source_ratio_target": 0.6,
+    "caps": {
+      "broll":   { "count": 1, "max": 3, "ok": true },
+      "smash":   { "count": 1, "max": 2, "ok": true },
+      "punchin": { "count": 2, "max": 4, "ok": true },
+      "jumpcut": { "count": 2, "max": 8, "ok": true }
+    },
+    "spend_ok": true
+  },
+  "proposals": {
+    "jump_cut_proposals": [
+      { "cut_at_sec": 12.35, "removes_sec": 0.48, "kind": "jump_cut" },
+      { "cut_at_sec": 26.10, "removes_sec": 0.31, "kind": "jump_cut" }
+    ],
+    "smash_audio_proposals": [
+      { "at_sec": 14.2, "duck_db": -12, "duration_sec": 0.8, "kind": "smash_cut" }
+    ],
+    "broll_proposals": [],
+    "flash_proposals": [],
+    "punchline": { "at_sec": 21.4, "silence_before_punchline": true }
+  },
+  "doctrine": {
+    "perturabo": "le OU/QUOI — il tranche les propositions, ecrit l'accroche, choisit les numeros B-roll",
+    "lacrimae": "le COMMENT — courbes, synchro, flashs, budgets, portes",
+    "warsmith": "valide au gate ; toute decision creative finale lui revient"
+  },
+  "notes": [
+    "PROPOSITIONS uniquement — rien n'est applique sans validation pack/manifeste + operateur",
+    "flash blanc a l'ENTREE de chaque B-roll, jamais a la sortie (spec §1)",
+    "SFX uniquement a l'entree des B-rolls (regle Warsmith anti-saturation)",
+    "pas de video = pas de B-roll (si pas de candidat, rien n'est propose)"
+  ]
+}
