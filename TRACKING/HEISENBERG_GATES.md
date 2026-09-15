@@ -61,6 +61,25 @@ composition (`entry.caviar ?? manifest.caviar`). Les miroirs
 `bridgeClipper.js` F03_PREVIEW/F03_PICTOR sont diffé bit à bit à chaque
 exécution de `npm run test:caviar`. Contrat complet : HEISENBERG_PLAN §8.1.
 
+## Gates v2 — pack avec partition F00D (implémentés, 2026-09-15)
+
+Nouveaux gates `caviar_gate.py --pack-v2 <pack.json>` (rouge dure) + guide
+complet `TRACKING/CAVIAR_PACK_V2.md` :
+
+| Gate | Vérification |
+|---|---|
+| **H2-REVIEW** | `ALL_GATES_GO` + `VALIDATED` (DRAFT ≠ exécutable) |
+| **H2-BOUND** | `f06_gate.mode` = caviar_bound |
+| **H2-HIERARCHY** | partition présente → cuts/zooms F06 vides (régression sinon) |
+| **H2-CHECKSUM** | binding == custody ; sha256_16 du manifeste livré si récupéré |
+| **H2-TIMESTAMP** | manifeste (run_id) avant pack |
+| **H2-RESOLUTION** | aucun événement après `resolution_at` |
+| **H2-BUDGET** | dépense recalculée == déclarée, ≤ 55 u, caps_respected ≠ false |
+
+L'agrégat multi-entrées normalise aussi v2→v1 (partitions par entrée) —
+couvre le faux vert. Fixture : pack réel voxc-2 (portes vertes, 32u == 32u).
+Tests : adaptateur v2 12/12, gate 24/24.
+
 ## CI (branché)
 
 Le workflow `dev10_pur_render.yml` appelle Heisenberg après l'agrégation

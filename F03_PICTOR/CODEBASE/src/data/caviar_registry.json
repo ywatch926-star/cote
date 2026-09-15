@@ -1,0 +1,24 @@
+{
+  "schema_version": "dev10.broll-registry.v2",
+  "name": "Registre B-roll — index sémantique v2 (F00D) + compat numéroté v1",
+  "doctrine": "PERTURABO/F00D ne voit JAMAIS les fichiers. F00D demande un broll_id sémantique (BLUR-01) ou un numéro (v1) ; le bras armé seul résout le fichier. Remplacer un asset = zéro modification de manifeste/pack.",
+  "semantic": {
+    "BLUR-01": {
+      "file": "broll/BLUR-01.mp4",
+      "label": "Panneau blur — crop zoom (émotion demandée par F00D)",
+      "emotions": ["incredulity", "dreamlike", "vertige"],
+      "duration_frames_max": 45,
+      "sfx": "impact",
+      "entry_flash": true
+    },
+    "BLUR-02": {
+      "file": "broll/BLUR-02.mp4",
+      "label": "Panneau blur — crop zoom (émotion demandée par F00D)",
+      "emotions": ["dreamlike", "vertige", "reel_question"],
+      "duration_frames_max": 45,
+      "sfx": "impact",
+      "entry_flash": true
+    }
+  },
+  "note": "Les fichiers .mp4 ne sont PAS commités (public/broll/, jamais dans git). Un broll_id sans fichier résolu = événement déposé au rendu (« pas de vidéo = pas de B-roll »). Le bras armé ajoute ici ses entrées au fil des assets déposés dans public/broll/."
+}

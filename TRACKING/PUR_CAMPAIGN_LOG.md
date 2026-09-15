@@ -257,3 +257,20 @@ overlay boxé unique 44px à y 11%.
   Groupe 1 vert. fx_mode=off : « clip normal » conserve les jump cuts.
 - Prochain groupe (4) : la mémoire ARCHIVUM — `ARCHIVUM/narrativum/` après
   décision doctrinale de conservation.
+
+## 2026-09-15 (v2) — Pack v2 + partition F00D : réception adaptée et vérifiée
+
+- Note technique PERTURABO reçue et confrontée au code : doctrine identique
+  (budget 100/55u, flash/SFX entrée-seule, élément unique), seuls les noms de
+  champs changent → adaptateur `caviarV2.js` + portes v2 du gate.
+- **Pack réel voxc-2** (`production_pack_pur_voxc2_blur_v2.json`, branche
+  v2-live-vox-c) validé en lecture seule : portes vertes, budget 32u
+  recalculé == 32u déclaré (respiration 68u), BLUR-01/02 résolus via le
+  registre sémantique, flashs aux bons frames à speed 1.05.
+- Pièges traités : OUT/ gitignoré (canal EXPORT/), DRAFT non exécutable,
+  détection par présence de blocs (vieilles clés jamais exigées), smash/
+  panels au top de la partition OU sous events.* (les deux acceptés).
+- CI : étape gate étendue (`--pack-v2` + checksum best-effort via le
+  manifeste F00D déclaré). Tests : v2 12/12, gate 24/24, moteur 21/21.
+- À venir : rendu du panneau possédé par la partition (crop_zoom/blur/panel)
+  puis rendu réel de bout en bout — après GO opérateur.

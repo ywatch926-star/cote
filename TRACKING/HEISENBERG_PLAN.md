@@ -158,3 +158,22 @@ F03_PREVIEW/F03_PICTOR `bridgeClipper.js` diffé à chaque exécution des tests.
 - SFX disponibles côté rendu : `impact` (`public/sfx/impact.mp3`).
 - Le gate `caviar_gate.py` refuse le pack AVANT rendu si le bloc viole le
   Budget d'Attention — corriger le pack, pas la doctrine.
+
+## 9. PACK V2 & PARTITION F00D (implémenté côté réception, 2026-09-15)
+
+Le pack v2 (note technique PERTURABO) porte le geste dans `caviar_partition`
+(sortie F00D). Guide complet : **`TRACKING/CAVIAR_PACK_V2.md`**.
+
+- **Adaptateur** `F03_PICTOR/CODEBASE/src/caviarV2.js` : détection v0/v1/v2,
+  mapping panels/silence_trims/punch_ins/smash_audio → moteur, registre
+  SÉMANTIQUE (`BLUR-01` → fichier, compat numéroté v1).
+- **Passthrough v2** dans les miroirs bridgeClipper + registre miroir
+  `src/data/caviar_registry.json`.
+- **Portes v2** `caviar_gate.py --pack-v2` : review ALL_GATES_GO/VALIDATED,
+  caviar_bound, hiérarchie, checksum16, horodatage, resolution_at, budget
+  croisé (recalcul indépendant). Normalisation v2→v1 dans le gate pour
+  l'agrégat.
+- **Vérifié sur le pack réel voxc-2** : portes vertes, 32u recalculées ==
+  32u déclarées, BLUR-01/02 résolus.
+- **Reste (Groupe 2)** : rendu du panneau (`crop_zoom`, `blur_radius_px`,
+  `panel: vertical_text_overlay`) puis rendu réel de bout en bout.

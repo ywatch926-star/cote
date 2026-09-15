@@ -7,7 +7,7 @@
     "render": "remotion render src/index.jsx LacrimaeShort out/short_final.mp4 --concurrency=1",
     "check": "remotion compositions src/index.jsx",
     "studio": "remotion studio src/index.jsx",
-    "test:caviar": "node tests/caviar_render.test.mjs"
+    "test:caviar": "node tests/caviar_render.test.mjs && node tests/caviar_v2.test.mjs"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

@@ -206,17 +206,42 @@ jobs:
           PYEOF
           cp F03_PICTOR/OUT/${{ matrix.angle_id }}/pur_manifest.json F03_PICTOR/CODEBASE/src/data/pur_manifest.json
 
-      - name: CAVIAR Groupe 3 — miroir budget + tests moteur + gate (rouge dure)
+      - name: CAVIAR Groupe 3 — miroir budget + tests moteur + gate v1/v2 (rouge dure)
+        env:
+          GH_TOKEN: ${{ secrets.PERTURABO_TOKEN || secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ inputs.perturabo_branch }}
         run: |
           set -e
           # Miroir : HEISENBERG (source de vérité) == miroir F03 (consommé au rendu)
           diff F03_PICTOR/HEISENBERG/caviar_budget.json F03_PICTOR/CODEBASE/src/data/caviar_budget.json \
             || { echo '✗ miroir caviar_budget.json divergent — resynchroniser avant rendu.'; exit 1; }
-          # Tests du moteur de rendu narratif (zéro dépendance externe)
+          # Tests du moteur de rendu narratif (v1 + adaptateur v2, zéro dépendance)
           node F03_PICTOR/CODEBASE/tests/caviar_render.test.mjs
+          node F03_PICTOR/CODEBASE/tests/caviar_v2.test.mjs
           # Double barrage : le bloc caviar du pack respecte le Budget d'Attention
+          # + portes v2 si le pack porte une partition F00D (review/checksum/
+          # hiérarchie/horodatage/resolution_at/budget_state croisé).
+          MANIFEST_CAVIAR_ARG=""
+          CAV_MANIFEST_PATH="$RUNNER_TEMP/caviar_manifest_f00d.json"
+          MANIFEST_REL=$(python3 -c "import json; p=json.load(open('${{ matrix.pack_path }}')); print(((p.get('chain_of_custody') or {}).get('f00d_partition') or {}).get('manifest') or '')" 2>/dev/null || true)
+          if [ -n "${MANIFEST_REL}" ]; then
+            echo "manifeste F00D déclaré : ${MANIFEST_REL} — tentative de récupération (checksum)"
+            # Le pack peut vivre sur l'un des repos PERTURABO (alias ou source) —
+            # la vérification est best-effort : si introuvable, la partition
+            # embarquée fait foi et le checksum est marqué non vérifié.
+            for REPO in "${PERTURABO_REPO}" "jfbjfojfonf/PERTURABO"; do
+              if gh api "repos/${REPO}/contents/${MANIFEST_REL}?ref=${BRANCH}" --jq .content 2>/dev/null | base64 -d > "${CAV_MANIFEST_PATH}"; then
+                echo "  ▸ manifeste récupéré depuis ${REPO}"
+                MANIFEST_CAVIAR_ARG="--manifest-caviar ${CAV_MANIFEST_PATH}"
+                break
+              fi
+            done
+            [ -n "${MANIFEST_CAVIAR_ARG}" ] || echo '⚠ manifeste F00D non récupérable — checksum non vérifié (la partition embarquée fait foi)'
+          fi
+          # shellcheck disable=SC2086
           python3 F03_PICTOR/HEISENBERG/caviar_gate.py \
-            --manifest F03_PICTOR/OUT/${{ matrix.angle_id }}/pur_manifest.json
+            --manifest F03_PICTOR/OUT/${{ matrix.angle_id }}/pur_manifest.json \
+            --pack-v2 "${{ matrix.pack_path }}" ${MANIFEST_CAVIAR_ARG}
 
       - name: Rendre le MP4 F04 (Remotion) — ${{ matrix.angle_id }}
         working-directory: F03_PICTOR/CODEBASE

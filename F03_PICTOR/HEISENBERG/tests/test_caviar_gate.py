@@ -87,6 +87,76 @@ class TestCaviarGate(unittest.TestCase):
         self.assertEqual(errors, [])
 
 
+REAL_PACK_PATH = HB / "tests" / "pack_voxc2_blur_v2.json"
+
+
+class TestPackV2(unittest.TestCase):
+    """Portes v2 (note PERTURABO 2026-09-15) — pack réel voxc-2 en fixture."""
+
+    def setUp(self):
+        self.pack = json.loads(REAL_PACK_PATH.read_text(encoding="utf-8")) if REAL_PACK_PATH.exists() else None
+
+    def test_pack_reel_conforme(self):
+        if not self.pack: self.skipTest("pack réel absent")
+        self.assertEqual(caviar_gate.check_pack_v2(self.pack, BUDGET), [])
+
+    def test_review_no_go_rouge(self):
+        if not self.pack: self.skipTest("pack réel absent")
+        pack = {**self.pack, "review": {"gate_state": "PENDING", "status": "DRAFT"}}
+        errors = caviar_gate.check_pack_v2(pack, BUDGET)
+        self.assertTrue(any("review non exécutable" in e for e in errors), errors)
+
+    def test_f06_mode_incoherent_rouge(self):
+        if not self.pack: self.skipTest("pack réel absent")
+        import copy
+        pack = copy.deepcopy(self.pack)
+        pack["chain_of_custody"]["f06_gate"]["mode"] = "legacy v2.1"
+        errors = caviar_gate.check_pack_v2(pack, BUDGET)
+        self.assertTrue(any("≠ caviar_bound" in e for e in errors), errors)
+
+    def test_hierarchie_violee_rouge(self):
+        if not self.pack: self.skipTest("pack réel absent")
+        import copy
+        pack = copy.deepcopy(self.pack)
+        pack["montage_instructions"]["body"]["cuts"] = [{"cut_at_sec": 5}]
+        pack["montage_instructions"]["body"]["zooms"] = [{"moment_sec": 6}]
+        errors = caviar_gate.check_pack_v2(pack, BUDGET)
+        self.assertTrue(any("hiérarchie violée" in e for e in errors), errors)
+
+    def test_checksum_divergents_rouge(self):
+        if not self.pack: self.skipTest("pack réel absent")
+        import copy
+        pack = copy.deepcopy(self.pack)
+        pack["chain_of_custody"]["f00d_partition"]["checksum16"] = "deadbeefdeadbeef"
+        errors = caviar_gate.check_pack_v2(pack, BUDGET)
+        self.assertTrue(any("checksum16 divergents" in e for e in errors), errors)
+
+    def test_event_apres_resolution_rouge(self):
+        if not self.pack: self.skipTest("pack réel absent")
+        import copy
+        pack = copy.deepcopy(self.pack)
+        pack["caviar_partition"]["resolution_at"] = 20.0
+        # smash réel à 28.216 s > 20 s → rouge
+        errors = caviar_gate.check_pack_v2(pack, BUDGET)
+        self.assertTrue(any("après resolution_at" in e for e in errors), errors)
+
+    def test_budget_mensonger_rouge(self):
+        if not self.pack: self.skipTest("pack réel absent")
+        import copy
+        pack = copy.deepcopy(self.pack)
+        pack["caviar_partition"]["budget_state"]["spent_units"] = 10  # réel : 32u
+        errors = caviar_gate.check_pack_v2(pack, BUDGET)
+        self.assertTrue(any("≠ recalcul" in e for e in errors), errors)
+
+    def test_caps_respected_false_rouge(self):
+        if not self.pack: self.skipTest("pack réel absent")
+        import copy
+        pack = copy.deepcopy(self.pack)
+        pack["caviar_partition"]["budget_state"]["caps_respected"] = False
+        errors = caviar_gate.check_pack_v2(pack, BUDGET)
+        self.assertTrue(any("caps_respected=false" in e for e in errors), errors)
+
+
 class TestCaviarGateCLI(unittest.TestCase):
     def run_gate(self, manifest: dict) -> int:
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
@@ -123,6 +193,33 @@ class TestCaviarGateCLI(unittest.TestCase):
         manifest = {"fps": 30, "entries": [{"angle_id": "A01", "caviar": base_block()},
                                            {"angle_id": "A02", "caviar": bad}]}
         self.assertEqual(self.run_gate(manifest), 1)
+
+    def run_gate_with_pack(self, pack: dict) -> int:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump({"fps": 30}, f)
+            mpath = f.name
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump(pack, f)
+            ppath = f.name
+        try:
+            return subprocess.run(
+                [sys.executable, str(HB / "caviar_gate.py"), "--manifest", mpath, "--pack-v2", ppath],
+                capture_output=True, text=True,
+            ).returncode
+        finally:
+            Path(mpath).unlink(missing_ok=True)
+            Path(ppath).unlink(missing_ok=True)
+
+    def test_cli_pack_reel_vert(self):
+        if not REAL_PACK_PATH.exists(): self.skipTest("pack réel absent")
+        self.assertEqual(self.run_gate_with_pack(json.loads(REAL_PACK_PATH.read_text(encoding="utf-8"))), 0)
+
+    def test_cli_pack_draft_rouge(self):
+        if not REAL_PACK_PATH.exists(): self.skipTest("pack réel absent")
+        import copy
+        pack = copy.deepcopy(json.loads(REAL_PACK_PATH.read_text(encoding="utf-8")))
+        pack["review"] = {"gate_state": "PENDING", "status": "DRAFT"}
+        self.assertEqual(self.run_gate_with_pack(pack), 1)
 
 
 if __name__ == "__main__":

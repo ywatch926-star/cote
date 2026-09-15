@@ -30,7 +30,9 @@
    le miroir data/caviar_budget.json est vérifié par caviar_gate.py.
    ═══════════════════════════════════════════════════════════════════ */
 
-/** Bloc caviar brut (pack PERTURABO) → forme normalisée. */
+/** Bloc caviar brut (pack PERTURABO) → forme normalisée.
+ *  `extra` (v2 F00D : resolution_at, run_id, budget_state…) est transporté
+ *  tel quel — les événements gardent leurs champs additionnels. */
 export function normalizeCaviarBlock(raw) {
   const r = raw && typeof raw === 'object' ? raw : {};
   return {
@@ -40,6 +42,7 @@ export function normalizeCaviarBlock(raw) {
     punchins: Array.isArray(r.punchins) ? r.punchins : [],
     brolls: Array.isArray(r.brolls) ? r.brolls : [],
     smash_audio: Array.isArray(r.smash_audio) ? r.smash_audio : [],
+    extra: r.extra && typeof r.extra === 'object' ? r.extra : undefined,
   };
 }
 

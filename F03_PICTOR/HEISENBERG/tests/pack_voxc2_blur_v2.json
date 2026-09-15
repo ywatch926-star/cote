@@ -1,0 +1,336 @@
+{
+  "pack_id": "SOPHIE_RAIN_CLIPIFY_US_2026-voxc2-blur",
+  "generated_at": "2026-09-15T12:42:26Z",
+  "mode": "pur",
+  "asset_mode": "blur",
+  "campaign_id": "SOPHIE_RAIN_CLIPIFY_US_2026",
+  "identite": {
+    "campaign_id": "SOPHIE_RAIN_CLIPIFY_US_2026",
+    "angle_id": "A01",
+    "candidate_id": "voxc-2",
+    "pack_index": 1,
+    "pack_total": 1
+  },
+  "cibles": {
+    "target_platform": "youtube_shorts",
+    "target_market": "us_young_english"
+  },
+  "source": {
+    "vod_url": "https://www.youtube.com/watch?v=cP8vli4kfhs",
+    "start_sec": 153.9,
+    "end_sec": 205.201,
+    "duration_sec": 51.30099999999999,
+    "signal_type": "platform_heat",
+    "signal_intensity": 0.730986,
+    "source_permission": "campaign_provided"
+  },
+  "chain_of_custody": {
+    "f00c_gate": {
+      "verdict": "GO",
+      "style": "blur",
+      "decided_by": "operateur",
+      "at": "2026-09-14T18:16Z"
+    },
+    "f00d_partition": {
+      "run_id": "f00c_2026-09-14T134014.262908+0000",
+      "manifest": "docs/data/caviar/caviar_manifest_voxc2_blur.json",
+      "checksum16": "65bef6ba008af8e2",
+      "status": "DRAFT->gate GO via F06 binding"
+    },
+    "f04_gate": {
+      "verdict": "GO",
+      "overlay": "She makes MORE than LeBron James? / Top 0.1% OF earner speaks out",
+      "decided_by": "operateur",
+      "at": "2026-09-15",
+      "engine": "kimi-k3 NVIDIA NIM"
+    },
+    "f06_gate": {
+      "verdict": "GO",
+      "mode": "caviar_bound v3.0.0",
+      "decided_by": "operateur",
+      "at": "2026-09-15",
+      "montage_instructions_path": "F06_DIRECTOR/OUT/montage_instructions.json"
+    },
+    "f05_gate": {
+      "verdict": "GO",
+      "decided_by": "operateur",
+      "at": "2026-09-15T12:55:45Z",
+      "note": "pack final conforme — autorise a entrer dans EXPORT"
+    },
+    "export": "AUTORISE (gate F05 GO) — pret pour le bras arme (LACRIMAE)"
+  },
+  "copywriting": {
+    "overlay_title": "She makes MORE than LeBron James?\nTop 0.1% OF earner speaks out",
+    "overlay_lines": 2,
+    "rationale": "F04/kimi-k3, GO operateur — juxtaposition choc LeBron x statut OF elite, hook->payoff Shorts, fidele au dialogue reel."
+  },
+  "montage_instructions": {
+    "metadata": {
+      "generated_at": "2026-09-15T12:42:26Z",
+      "generator": "F06_DIRECTOR",
+      "version": "3.0.0-caviar-bound",
+      "mode": "caviar_bound",
+      "doctrine_source": "ARCHIVUM/montage/patterns/ + manifeste caviar",
+      "campaign_id": "voxc-2",
+      "angle_id": "A01",
+      "segment_id": "A01",
+      "style": "blur"
+    },
+    "caviar_binding": {
+      "bound": true,
+      "run_id": "f00c_2026-09-14T134014.262908+0000",
+      "candidate_id": "voxc-2",
+      "style": "blur",
+      "manifest_path": "/home/daytona/codebase/docs/data/caviar/caviar_manifest_voxc2_blur.json",
+      "manifest_sha256_16": "65bef6ba008af8e2",
+      "hierarchy": "F00D commande — F06 execute le reste (les cuts/zooms/SFX et l'anti-detection de base appartiennent a la partition)"
+    },
+    "caviar_owned": {
+      "cuts": true,
+      "zooms": true,
+      "sfx_events": true,
+      "mirror": true,
+      "speed": true,
+      "crop": true,
+      "panel_render": true,
+      "audio_duck": true
+    },
+    "segment": {
+      "source_url": "https://www.youtube.com/watch?v=cP8vli4kfhs",
+      "start_sec": 153.9,
+      "end_sec": 205.201,
+      "duration_sec": 51.30099999999999,
+      "signal_type": "platform_heat",
+      "signal_intensity": 0.730986,
+      "emotion": null
+    },
+    "hook": {
+      "duration_sec": 3,
+      "philosophy": "0-3s : visage speaker, PAS de B-roll, voix claire",
+      "first_panel_at_sec": 12.825,
+      "panel_at_zero": false
+    },
+    "body": {
+      "duration_sec": 51.3,
+      "note": "aucun cut/zoom planifiés ici — F00D possède le geste et le rythme",
+      "cuts": [],
+      "zooms": [],
+      "panels": [
+        {
+          "panel_id": "BLUR-01",
+          "at_sec": 12.825,
+          "duration_frames": 36,
+          "crop_zoom": 1.3,
+          "blur_radius_px": 18,
+          "panel": "vertical_text_overlay",
+          "emotion_requested": "incredulity (le fou rire incrédule face à un chiffre absurde)",
+          "entry_flash": true,
+          "sfx": "impact",
+          "owned_by": "caviar"
+        },
+        {
+          "panel_id": "BLUR-02",
+          "at_sec": 25.651,
+          "duration_frames": 36,
+          "crop_zoom": 1.3,
+          "blur_radius_px": 18,
+          "panel": "vertical_text_overlay",
+          "emotion_requested": "dreamlike (le vertige « est-ce que c'est réel ? »)",
+          "entry_flash": true,
+          "sfx": "impact",
+          "owned_by": "caviar"
+        }
+      ],
+      "audio_duck": [
+        {
+          "at_sec": 28.216,
+          "duck_db": -12,
+          "duration_sec": 0.8,
+          "owned_by": "caviar"
+        }
+      ],
+      "text_overlays": {
+        "main_title": {
+          "text": "She makes MORE than LeBron James?\nTop 0.1% OF earner speaks out",
+          "font": "Montserrat ExtraBold / Bebas Neue (800-900)",
+          "fallback": "Arial Black, Impact",
+          "color": "#FFFFFF",
+          "accent": "#FFD700 (jaune) ou #00FF88 (vert)",
+          "outline": "#000000 (3-4px)",
+          "shadow": "drop-shadow 2px 2px 4px rgba(0,0,0,0.8)",
+          "max_lines": 2,
+          "position": "haut vers le centre",
+          "font_size": "64-72px",
+          "animation": "pop_in (scale 0 -> 110% -> 100% en 0.2s)",
+          "visible": "toute la duree"
+        },
+        "captions": {
+          "source": "TRANSCRIPT du speech (word-by-word)",
+          "text_sample": "",
+          "font": "Montserrat Bold / Poppins Bold (700)",
+          "color": "blanc outline sombre",
+          "highlight": "mots-cles en accent (jaune/vert)",
+          "animation": "word_by_word"
+        },
+        "safe_zones": {
+          "top": "10% (titre de la vidéo)",
+          "bottom": "15% (boutons like/comment/share)",
+          "right": "5% (bouton subscribe)",
+          "safe_area": "centre 70% de l'écran"
+        }
+      },
+      "audio": {
+        "principle": "La voix du speaker est TOUJOURS prioritaire.",
+        "volume_hierarchy": {
+          "1_speaker_voice": "0dB (référence — toujours le plus fort)",
+          "2_captions_sync": "sync avec la voix",
+          "3_sfx_impact": "-6dB à -12dB sous la voix",
+          "4_music_bed": "-15dB à -20dB sous la voix",
+          "5_sfx_background": "-20dB à -25dB (presque inaudible)"
+        },
+        "sfx_events": [],
+        "sfx_note": "SFX possédés par la partition — UNIQUEMENT aux entrées de panneaux (voir body.panels[].sfx)",
+        "music_be": {
+          "enabled": false,
+          "note": "pas de musique sur le hook (0-3s)"
+        }
+      },
+      "energy_curve": [
+        {
+          "phase": "rise",
+          "from_sec": 0.0,
+          "to_sec": 17.1,
+          "energy": 55
+        },
+        {
+          "phase": "peak",
+          "from_sec": 17.1,
+          "to_sec": 34.2,
+          "energy": 100
+        },
+        {
+          "phase": "fall",
+          "from_sec": 34.2,
+          "to_sec": 51.3,
+          "energy": 70
+        },
+        {
+          "note": "climax_caviar_at_sec",
+          "value": 28.216
+        }
+      ],
+      "pacing": "trio broll+flash raccourcit le pacing local ; l'audio du streamer est MAINTENU sous les effets"
+    },
+    "outro": {
+      "duration_sec": 1,
+      "type": "fade_to_black",
+      "note": "PAS de CTA en PUR — finir sur la chute"
+    },
+    "anti_detection": {
+      "obligatoire": true,
+      "principe": "Complément de la partition caviar (miroir/vitesse/crop déjà possédés par F00D).",
+      "techniques": [
+        {
+          "name": "sfx_background_layer",
+          "action": "bruit de fond léger continu",
+          "volume": "10-15%"
+        },
+        {
+          "name": "color_shift",
+          "action": "variation de teinte 2-5 degrés"
+        },
+        {
+          "name": "trim",
+          "action": "1-2 frames trimées au début/fin"
+        }
+      ],
+      "owned_by_caviar": [
+        "mirror",
+        "speed",
+        "crop"
+      ]
+    },
+    "platform_rules": {
+      "platform": "youtube_shorts",
+      "max_duration_sec": 60,
+      "min_duration_sec": 15,
+      "hook_duration_sec": 3,
+      "aspect_ratio": "9:16",
+      "resolution": "1080x1920"
+    },
+    "style": {
+      "pacing": "fast",
+      "energy_level": "high",
+      "color_palette": "contraste fort — blanc/accent jaune",
+      "text_treatment": "bold",
+      "panel_render": "crop-zoom + flou + panneau vertical : exécutés par le bras armé selon body.panels"
+    },
+    "compliance": {
+      "disclosure": "#ad",
+      "submit_deadline_min": 60,
+      "platform": "youtube_shorts"
+    }
+  },
+  "caviar_partition": {
+    "bound": true,
+    "run_id": "f00c_2026-09-14T134014.262908+0000",
+    "style": "blur",
+    "panels": [
+      {
+        "broll_id": "BLUR-01",
+        "kind": "broll_blur",
+        "crop_zoom": 1.3,
+        "blur_radius_px": 18,
+        "panel": "vertical_text_overlay",
+        "emotion_requested": "incredulity (le fou rire incrédule face à un chiffre absurde)",
+        "start_sec": 12.825,
+        "duration_frames": 36,
+        "entry_flash": true,
+        "sfx": "impact"
+      },
+      {
+        "broll_id": "BLUR-02",
+        "kind": "broll_blur",
+        "crop_zoom": 1.3,
+        "blur_radius_px": 18,
+        "panel": "vertical_text_overlay",
+        "emotion_requested": "dreamlike (le vertige « est-ce que c'est réel ? »)",
+        "start_sec": 25.651,
+        "duration_frames": 36,
+        "entry_flash": true,
+        "sfx": "impact"
+      }
+    ],
+    "smash_audio": [
+      {
+        "at_sec": 28.216,
+        "duck_db": -12,
+        "duration_sec": 0.8
+      }
+    ],
+    "budget_state": {
+      "spent_units": 32,
+      "ceiling_units": 55,
+      "breathing_units": 68,
+      "counts": {
+        "broll": 2,
+        "smash_audio": 1,
+        "punch_ins": 0,
+        "jump_cuts": 0
+      },
+      "caps_respected": true
+    },
+    "note": "la partition est la source de verite du geste — F06 est soumis"
+  },
+  "compliance": {
+    "disclosure": "#ad",
+    "submit_deadline_min": 60,
+    "anti_detection_applied": true
+  },
+  "review": {
+    "status": "VALIDATED",
+    "gate_state": "ALL_GATES_GO",
+    "reason": "F00C GO blur + F00D partition + F04 GO overlay + F06 GO montage + F05 GO pack (operateur)",
+    "validated_at": "2026-09-15T12:55:45Z"
+  }
+}

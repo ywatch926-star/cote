@@ -77,8 +77,17 @@ python3 F03_PICTOR/HEISENBERG/heisenberg.py --emit-pack-chunk OUT/caviar_manifes
 
 # Tests
 python3 F03_PICTOR/HEISENBERG/tests/test_heisenberg.py
-python3 F03_PICTOR/HEISENBERG/tests/test_caviar_gate.py   # gate rendu (Groupe 3)
+python3 F03_PICTOR/HEISENBERG/tests/test_caviar_gate.py   # gate rendu (Groupe 3 + portes v2)
 ```
+
+## Pack v2 & partition F00D (réception vérifiée)
+
+Le pack v2 PERTURABO porte le geste dans `caviar_partition` : l'adaptateur
+`F03_PICTOR/CODEBASE/src/caviarV2.js` le normalise vers le moteur (registre
+sémantique `BLUR-01` → fichier, compat numéroté v1) et `caviar_gate.py
+--pack-v2` vérifie review/checksum/hiérarchie/horodatage/resolution_at/budget.
+Vérifié sur le pack réel voxc-2 (32u == 32u, portes vertes). Guide complet :
+`TRACKING/CAVIAR_PACK_V2.md`.
 
 ## Groupe 3 — le rendu narratif (côté bras armé)
 

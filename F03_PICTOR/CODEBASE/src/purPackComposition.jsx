@@ -20,7 +20,9 @@ import {
   caviarPunchScaleAtFrame,
   caviarFlashOpacityAtFrame,
 } from './caviarRender';
+import { toEngineBlock } from './caviarV2';
 import caviarBudget from './data/caviar_budget.json';
+import caviarRegistry from './data/caviar_registry.json';
 
 /**
  * Swell continu (décision Warsmith 2026-09-12) — PAS un zoom :
@@ -187,7 +189,7 @@ export function PurPackComposition({ purManifest, session: sessionProp, entryInd
   // Absent partout → timeline vide, rendu historique à l'identique.
   const caviarRaw = entry.caviar ?? manifest.caviar;
   const caviar = useMemo(
-    () => buildCaviarTimeline(caviarRaw, caviarBudget, {
+    () => buildCaviarTimeline(toEngineBlock(caviarRaw, caviarRegistry), caviarBudget, {
       fps, speed, durationInFrames, fxOff,
     }),
     [caviarRaw, fps, speed, durationInFrames, fxOff],

@@ -1,7 +1,25 @@
 {
-  "schema_version": "dev10.broll-registry.v1",
-  "name": "Registre B-roll numéroté — la bibliothèque vit chez le bras armé",
-  "doctrine": "PERTURABO ne voit JAMAIS les B-rolls. Il écrit l'ÉMOTION à illustrer (moqueur, triomphant, chute...) et le numéro ('met le numéro 1'). Le bras armé sait seul quel fichier se cache derrière. Un B-roll sans flash d'entrée + SFX couplé n'existe pas.",
+  "schema_version": "dev10.broll-registry.v2",
+  "name": "Registre B-roll — index sémantique v2 (F00D) + compat numéroté v1",
+  "doctrine": "PERTURABO/F00D ne voit JAMAIS les B-rolls. F00D demande un broll_id sémantique (BLUR-01) ou un numéro v1 ('met le numéro 1') ; le bras armé sait seul quel fichier se cache derrière. Un B-roll sans flash d'entrée + SFX couplé n'existe pas. Remplacer un asset = zéro modification du manifeste/pack.",
+  "semantic": {
+    "BLUR-01": {
+      "file": "broll/BLUR-01.mp4",
+      "label": "Panneau blur — crop zoom",
+      "emotions": ["incredulity", "vertige", "fou_rire"],
+      "duration_frames_max": 45,
+      "sfx": "impact",
+      "entry_flash": true
+    },
+    "BLUR-02": {
+      "file": "broll/BLUR-02.mp4",
+      "label": "Panneau blur — crop zoom",
+      "emotions": ["dreamlike", "vertige", "reel_question"],
+      "duration_frames_max": 45,
+      "sfx": "impact",
+      "entry_flash": true
+    }
+  },
   "clips": {
     "1": {
       "file": "broll/broll_01.mp4",
@@ -37,5 +55,5 @@
     }
   },
   "placeholder_mode": true,
-  "placeholder_note": "Les fichiers .mp4 ne sont PAS commités (règle : jamais d'assets volumineux dans git). Registre opérationnel dès que l'opérateur dépose les clips dans BROLL/FILES/."
+  "placeholder_note": "Les fichiers .mp4 ne sont PAS commités (règle : jamais d'assets volumineux dans git). Index sémantique opérationnel : les entrées BLUR-01/BLUR-02 correspondent aux assets à déposer dans public/broll/ (rendu) et BROLL/FILES/ (bibliothèque)."
 }

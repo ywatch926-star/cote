@@ -279,3 +279,37 @@ cat TRACKING/TODO_CONTINUATION.md
   smash sont testables immediatement, B-roll des que le MP4 est depose dans
   `F03_PICTOR/CODEBASE/public/broll/` + registre.
 
+### 2026-09-15 (v2) — GO operateur : ADAPTATEUR PACK V2 + PARTITION F00D (Groupe 1)
+
+- **Note technique PERTURABO 2026-09-15** lue et confrontée au code : la
+  doctrine est déjà la nôtre (budget 100/55u, flash entrée-seule, SFX
+  entrée-seule, élément unique, pas de manifeste toxique, PERTURABO ne voit
+  jamais les fichiers). Seuls les noms de champs changent → adaptateur.
+- **`caviarV2.js`** (nouveau, fonctions pures) : détection v0/v1/v2 (jamais
+  d'échec sur vieilles clés absentes), mapping `caviar_partition` → moteur
+  (panels→brolls, silence_trims→jump_cuts, events.punch_ins→punchins,
+  smash_audio), registre SÉMANTIQUE (BLUR-01 → fichier) + compat numéroté v1.
+  Tolérance documentée : le pack réel porte panels/smash_audio au TOP de la
+  partition, le manifeste les décrit sous events.* — les DEUX formes acceptées.
+- **Passthrough v2** dans les miroirs bridgeClipper (bit-à-bit, testé) :
+  `caviar_partition` transporte le geste F00D jusqu'à la composition ;
+  registre miroir `src/data/caviar_registry.json` (sémantique + v1).
+- **Portes v2 `caviar_gate.py`** (`--pack-v2`) : review ALL_GATES_GO/VALIDATED
+  (DRAFT ≠ exécutable), f06_gate.mode caviar_bound, hiérarchie (partition
+  présente + cuts/zooms F06 non vides = régression rouge), checksum16 binding
+  ↔ custody ↔ manifeste livré (sha256_16), horodatage manifeste < pack,
+  resolution_at (aucun événement après), budget_state croisé avec NOTRE
+  recalcul (pack mensonger = rouge). Normalisation v2→v1 dans le gate pour
+  l'agrégat multi-entrées (couvre le faux vert).
+- **Fixture = pack RÉEL** `production_pack_pur_voxc2_blur_v2.json` (récupéré
+  en lecture seule, branche v2-live-vox-c) : voxc-2 passe TOUT — portes v2,
+  budget recalculé 32u = déclaré 32u, respiration 68u, BLUR-01/02 résolus,
+  flashs aux bons frames à speed 1.05.
+- **CI** : étape gate v1/v2 étendue (`--pack-v2` + tentative checksum via le
+  manifeste F00D déclaré, best-effort non bloquant si introuvable).
+- **Tests** : moteur 21/21 + v2 12/12 + gate 24/24 + frégate 20/20 + Groupe 1.
+- **Reste (Groupe 2)** : rendu du PANNEAU possédé par la partition (crop_zoom,
+  blur_radius_px, panel vertical_text_overlay) puis rendu réel voxc-2.
+- **Reste (Groupe 3)** : docs v2 dédiées (CAVIAR_PACK_V2.md), registry
+  sémantique côté HEISENBERG, push final.
+

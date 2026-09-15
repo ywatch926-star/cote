@@ -59,3 +59,11 @@ chaque budget bloquant, schéma, clusters RMS synthétiques, détection de silen
 > d'Attention AVANT application (excédent déposé, gate rouge) et gate CI rouge
 > dure `caviar_gate.py` (pack avant rendu + agrégat avant publication). Détails :
 > `TRACKING/HEISENBERG_GATES.md` §Gates Groupe 3.
+>
+> Mise à jour 2026-09-15 (v2) : le pack v2 PERTURABO porte le geste dans
+> `caviar_partition` (sortie F00D) — adaptateur `caviarV2.js` (détection
+> v0/v1/v2, registre sémantique BLUR-01, mapping des champs), passthrough v2
+> dans les miroirs, et portes v2 du gate (review ALL_GATES_GO, caviar_bound,
+> hiérarchie, checksum16, horodatage, resolution_at, budget croisé). Vérifié
+> sur le pack réel voxc-2 : 32u == 32u, portes vertes. Guide :
+> `TRACKING/CAVIAR_PACK_V2.md`.
