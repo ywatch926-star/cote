@@ -15,6 +15,12 @@ import React, { useMemo } from 'react';
 import { AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, useVideoConfig, Video } from 'remotion';
 import { antiDetectionTransform, antiDetectionSpeed } from './antiDetection';
 import { normalizePurOverlayParams, normalizePurStyleParams } from './bridgeClipper';
+import {
+  buildCaviarTimeline,
+  caviarPunchScaleAtFrame,
+  caviarFlashOpacityAtFrame,
+} from './caviarRender';
+import caviarBudget from './data/caviar_budget.json';
 
 /**
  * Swell continu (décision Warsmith 2026-09-12) — PAS un zoom :
@@ -175,6 +181,22 @@ export function PurPackComposition({ purManifest, session: sessionProp, entryInd
   const fxOff = fxOptions.fx_mode === 'off';
   const muteBg = fxOptions.mute_bg === true;
 
+  // GROUPE 3 — HEISENBERG : rendu narratif caviar (jump cuts, punch-ins,
+  // B-roll numéroté, ducking). Bloc `manifest.caviar` absent → timeline
+  // vide, rendu historique à l'identique (zéro régression).
+  const caviar = useMemo(
+    () => buildCaviarTimeline(manifest.caviar, caviarBudget, {
+      fps, speed, durationInFrames, fxOff,
+    }),
+    [manifest.caviar, fps, speed, durationInFrames, fxOff],
+  );
+  const jumpSegments = caviar.segments; // [] si inactif
+  const caviarPunchScale = caviarPunchScaleAtFrame(caviar.punchins, localFrame);
+  const caviarFlash = caviarFlashOpacityAtFrame(caviar.flashes, localFrame);
+  const caviarBroll = (caviar.brolls || []).find(
+    (b) => localFrame >= b.frame && localFrame < b.frame + b.frames,
+  );
+
   const antiTransform = [
     fxOff ? (anti.mirror ? 'scaleX(-1)' : undefined) : antiDetectionTransform(anti, frame, fps),
     purCropTransform(anti.crop_pct),
@@ -232,6 +254,14 @@ export function PurPackComposition({ purManifest, session: sessionProp, entryInd
     muted: false, // VOIX DU CLIP ON — décision Warsmith 2026-09-11 (codex : « voix claire » hook)
     playbackRate: speed,
   };
+  // GROUPE 3 : si des jump cuts caviar sont actifs, CHAQUE tuile lit la bonne
+  // portion source (startFrom en frames). Sans caviar : comportement historique
+  // (startFrom=0, lecture continue) — l'audio reste synchronisé car la voix est
+  // portée par la vidéo elle-même.
+  if (jumpSegments.length > 0) {
+    const tile = jumpSegments.find((s) => localFrame >= s.from && localFrame < s.from + s.duration) || jumpSegments[jumpSegments.length - 1];
+    videoProps.startFrom = tile.sourceStart + (localFrame - tile.from);
+  }
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#050505', overflow: 'hidden' }}>
@@ -241,6 +271,19 @@ export function PurPackComposition({ purManifest, session: sessionProp, entryInd
           VIDÉO {safeIndex + 1}/{entries.length} · {entry.angle_id || entry.source_id || '?'}
         </div>
       )}
+      {/* GROUPE 3 — SFX des B-rolls caviar : UNIQUEMENT à l'entrée (règle
+          Warsmith anti-saturation), couplé au flash sur la même frame. */}
+      {(caviarBroll ? [caviarBroll] : []).map((b, i) => (
+        <Sequence key={`caviar_sfx_${b.frame}_${i}`} from={b.frame} durationInFrames={Math.max(1, durationInFrames - b.frame)}>
+          <Audio src={staticFile(`sfx/${String(b.sfx) === 'boom' ? 'impact' : b.sfx}.mp3`)} volume={0.55} />
+        </Sequence>
+      ))}
+
+      {/* GROUPE 3 — Smash audio caviar : le ducking (caviarDuckVolumeAtFrame)
+          multipliera le volume musical au climax. La couche musicale PUR
+          n'existe pas encore — la fonction est prête et testée, le bloc
+          s'activera dès qu'une piste musicale sera branchée ici. */}
+
       {/* SFX des zooms (volume 50-60% sous la voix) */}
       {(manifest.sfx_available === true ? entry.sfx_list || [] : []).map((sfx, index) => (
         Math.abs(frame - Number(sfx.moment_frame || 0)) < 1 && sfx.type ? (
@@ -252,10 +295,20 @@ export function PurPackComposition({ purManifest, session: sessionProp, entryInd
 
       <AbsoluteFill
         style={{
-          transform: [antiTransform, `scale(${zoomScale.toFixed(4)})`].filter((t) => !t.includes('scale(1)') || t !== 'scale(1.0000)').join(' '),
+          transform: [antiTransform, `scale(${(zoomScale * caviarPunchScale).toFixed(4)})`].filter((t) => !t.includes('scale(1)') || t !== 'scale(1.0000)').join(' '),
           transformOrigin: 'center center',
         }}
       >
+        {/* GROUPE 3 — B-roll numéroté : plein cadre, voix du clip continue,
+            flash blanc à l'ENTRÉE (rendu plus bas) + SFX sur la même frame. */}
+        {caviarBroll && (
+          <Video
+            src={staticFile(String(caviarBroll.file).replace(/^\.?\//, ''))}
+            startFrom={0}
+            muted
+            style={{ width: '100%', height: '100%', objectFit: 'cover', zIndex: 5 }}
+          />
+        )}
         {videoUrl ? (
           styleLayout === 'blur' ? (
             /* ── BLUR : couche arrière floutée + couche avant nette positionnable ── */
@@ -295,6 +348,12 @@ export function PurPackComposition({ purManifest, session: sessionProp, entryInd
       {/* Flash blanc de transition (décision Warsmith 2026-09-12) — sous le texte */}
       {whiteFlash > 0 && (
         <AbsoluteFill style={{ backgroundColor: '#FFFFFF', opacity: whiteFlash, pointerEvents: 'none' }} />
+      )}
+
+      {/* GROUPE 3 — Flash blanc caviar : ENTRÉE de B-roll UNIQUEMENT (jamais
+          à la sortie — spec CAVIAR §1), au-dessus du B-roll, sous le texte. */}
+      {caviarFlash > 0 && (
+        <AbsoluteFill style={{ backgroundColor: '#FFFFFF', opacity: caviarFlash, pointerEvents: 'none', zIndex: 6 }} />
       )}
 
       {/* Overlay titre PUR : STATIQUE du début à la fin (v2) — pas d'animation */}

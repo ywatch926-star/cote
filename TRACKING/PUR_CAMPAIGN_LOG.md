@@ -239,3 +239,21 @@ overlay boxé unique 44px à y 11%.
 - Doctrine rappelée : Heisenberg propose ; PERTURABO tranche le OÙ/QUOI ;
   Warsmith valide au gate. Prochain groupe (3) : le rendu narratif —
   B-roll numéroté au rendu, jump cuts, ducking.
+
+## 2026-09-15 — GROUPE 3 : le rendu narratif est en place
+
+- **Moteur de rendu** `F03_PICTOR/CODEBASE/src/caviarRender.js` : le bras armé
+  exécute le bloc `caviar` du pack — jump cuts (tuiles source↔timeline sans trou),
+  punch-ins (peak ≤ 1.15), B-roll numéroté (overlay plein cadre, voix continue,
+  flash blanc à l'ENTRÉE + SFX sur la même frame), ducking au climax. Le bloc
+  absent = rendu historique à l'identique (zéro régression).
+- **Anti-saturation au rendu** : le moteur vérifie le Budget d'Attention avant
+  d'appliquer — excédent déposé (le plus cher puis le plus tardif d'abord), la
+  respiration gagne (source seule ≥ 60-70 % de la timeline), gate rouge.
+- **Double barrage opérationnel** : frégate refuse à l'émission (H2/H3) +
+  `caviar_gate.py` rouge dure en CI (pack avant rendu, agrégat avant publication,
+  budget PAR entrée). Miroir `src/data/caviar_budget.json` diffé à chaque rendu.
+- **Tests** : moteur 20/20 (`npm run test:caviar`), gate 14/14, frégate 20/20,
+  Groupe 1 vert. fx_mode=off : « clip normal » conserve les jump cuts.
+- Prochain groupe (4) : la mémoire ARCHIVUM — `ARCHIVUM/narrativum/` après
+  décision doctrinale de conservation.

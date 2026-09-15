@@ -52,3 +52,10 @@ chaque budget bloquant, schéma, clusters RMS synthétiques, détection de silen
 > Mise à jour 2026-09-14 : les constantes de budget sont désormais partagées via
 > `F03_PICTOR/HEISENBERG/caviar_budget.json` (source de vérité unique — double
 > barrage frégate/gates). Les constantes de `caviar.py` restent alignées.
+>
+> Mise à jour 2026-09-15 (Groupe 3) : le rendu narratif est branché —
+> `F03_PICTOR/CODEBASE/src/caviarRender.js` exécute le bloc `caviar` du pack
+> (jump cuts, punch-ins, B-roll numéroté, ducking) avec vérification du Budget
+> d'Attention AVANT application (excédent déposé, gate rouge) et gate CI rouge
+> dure `caviar_gate.py` (pack avant rendu + agrégat avant publication). Détails :
+> `TRACKING/HEISENBERG_GATES.md` §Gates Groupe 3.

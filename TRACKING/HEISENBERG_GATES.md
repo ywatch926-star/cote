@@ -42,12 +42,27 @@ F03_PICTOR rend → gates existantes (bundle, P-AUD) → [HEISENBERG H0-H3] → 
 diverge des mêmes chiffres. Un seul fichier à amender (décision opérateur),
 jamais de constante dupliquée dans le code.
 
-## CI (branché, mais facultatif)
+## Gates GROUPE 3 — rendu narratif (implémentés, 2026-09-15)
+
+| Gate | Moment | Vérification | Critère de passage |
+|---|---|---|---|
+| **H-MIRROR** | CI, avant rendu | miroir budget F03 == source HEISENBERG | `diff caviar_budget.json` identique — sinon rouge dure |
+| **H-ENGINE** | CI, avant rendu | moteur de rendu narratif | `npm run test:caviar` 20/20 — sinon rouge dure |
+| **H-PACK** | CI, avant rendu | bloc `caviar` du pack (par entrée) | `caviar_gate.py` : dépense ≤ 55 u, caps, flash ENTRÉE-seule, SFX ENTRÉE-seule, pas de B-roll sans fichier, élément unique — sinon rouge dure (rendu annulé) |
+| **H-AGGREGATE** | CI, avant publication | manifeste agrégé multi-entrées | `caviar_gate.py` sur chaque entrée — sinon AUCUN bundle final publié |
+| **H-RENDER (soft)** | rendu Remotion | `buildCaviarTimeline()` en rendu | dépassement en rendu → événements DÉPOSÉS (le plus cher/tardif d'abord) + gate rouge rapporté — le MP4 reste propre, jamais saturé |
+
+Miroir budget consommé au rendu : `F03_PICTOR/CODEBASE/src/data/caviar_budget.json`
+(vérifié identique à la source HEISENBERG par H-MIRROR).
+
+## CI (branché)
 
 Le workflow `dev10_pur_render.yml` appelle Heisenberg après l'agrégation
 (`--no-whisper` sur les runners CI, rapide et sans dépendance). Un échec
 Heisenberg n'empêche PAS la publication du bundle (la frégate est advisory) —
 sauf verdict REFUSED journalisé, qui remonte comme avertissement opérateur.
+Les gates H-MIRROR / H-ENGINE / H-PACK / H-AGGREGATE, eux, sont **bloquants**
+(divergence budget = job rouge, aucun rendu, aucun bundle).
 
 ## Tests
 

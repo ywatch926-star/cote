@@ -3,7 +3,7 @@
 > Honneur à Walter White : la pureté, c'est tout. Nous visons le 99 % —
 > pas plus d'effets, une précision diabolique du dosage.
 
-**Date** : 2026-09-14 · **Statut** : implémentée (Groupe 2 du plan d'implémentation) ·
+**Date** : 2026-09-14 (Groupe 3 : 2026-09-15) · **Statut** : Groupe 2 + **Groupe 3 (rendu narratif) implémentés** ·
 **Moteur d'analyse** : Directeur Caviar Groupe 1 (`F00_INGEST/CODEBASE/caviar.py`) — zéro doublon.
 
 ---
@@ -99,8 +99,33 @@ python3 F03_PICTOR/HEISENBERG/tests/test_heisenberg.py     # 20 tests
 ```
 
 ## 7. Frontières (non négociables)
-
 - Heisenberg **propose**, ne décide jamais (PERTURABO = OÙ/QUOI, Warsmith tranche).
 - Pas d'accroche, pas de choix de segment, pas de style.
 - `speed` 1.05 intouchable (décision opérateur verrouillée).
 - Champs du chunk **optionnels et rétrocompatibles v1** (absents = comportement inchangé).
+
+## 8. GROUPE 3 — le rendu narratif (implémenté, 2026-09-15)
+
+Le bras armé transforme le bloc `caviar` du pack (décisions PERTURABO prises
+ depuis le manifeste de la frégate) en rendu Remotion réel :
+
+| Élément | Implémentation |
+|---|---|
+| **Jump cuts** | `buildCaviarTimeline()` : table source↔timeline en tuiles contiguës (aucun trou, aucun débordement) ; chaque tuile lit `startFrom` source ; un événement tombant DANS un silence retiré est recalé au point de coupe |
+| **Punch-ins** | courbe attack/hold/release (montée sèche, tenue, redescente vers 1.0), peak plafonné à 1.15 — jamais de zoom libre |
+| **B-roll numéroté** | overlay plein cadre (la voix du clip CONTINUE), flash blanc à l'ENTRÉE uniquement, SFX couplé sur la même frame ; **pas de fichier résolu = pas de B-roll** |
+| **Smash audio** | ducking `caviarDuckVolumeAtFrame()` (−12 dB, rampe 2 frames) — s'activera dès qu'une piste musicale PUR existera |
+| **fx_mode=off** | « clip normal » : punch-ins/flashs/B-rolls déposés, **jump cuts conservés** (coupes de montage, pas des effets) |
+
+**Double barrage (rendu)** : `caviarRender.js` VÉRIFIE le Budget d'Attention
+du pack avant application — dépense > 55 u ou cap dépassé → les événements
+excédentaires sont DÉPOSÉS (le plus cher puis le plus tardif d'abord, la
+respiration gagne) et le gate passe ROUGE. Côté CI, `caviar_gate.py`
+(rouge dure) vérifie le pack avant rendu ET le manifeste agrégé avant
+publication du bundle final (budget PAR entrée). Miroir budget
+`src/data/caviar_budget.json` diffé avec la source HEISENBERG à chaque rendu.
+
+**Tests** : `npm run test:caviar` (20/20 — zéro dépendance externe) +
+`test_caviar_gate.py` (14/14) + non-régression `test_heisenberg.py` (20/20)
+et `test_caviar.py` Groupe 1 (vert). Zéro régression : bloc `caviar` absent
+du pack = rendu historique à l'identique.

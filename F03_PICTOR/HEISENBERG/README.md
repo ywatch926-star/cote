@@ -77,7 +77,18 @@ python3 F03_PICTOR/HEISENBERG/heisenberg.py --emit-pack-chunk OUT/caviar_manifes
 
 # Tests
 python3 F03_PICTOR/HEISENBERG/tests/test_heisenberg.py
+python3 F03_PICTOR/HEISENBERG/tests/test_caviar_gate.py   # gate rendu (Groupe 3)
 ```
+
+## Groupe 3 — le rendu narratif (côté bras armé)
+
+Le bloc `caviar` du pack (décisions PERTURABO) est exécuté au rendu par
+`F03_PICTOR/CODEBASE/src/caviarRender.js` : jump cuts (table source↔timeline),
+punch-ins (peak ≤ 1.15), B-roll numéroté (flash ENTRÉE + SFX même frame,
+voix continue), ducking au climax. Double barrage : le moteur vérifie le
+Budget d'Attention AVANT d'appliquer — excédent déposé (respiration gagnée),
+gate rouge. Gate CI rouge dure : `caviar_gate.py` (pack avant rendu + agrégat
+avant publication). Tests moteur : `cd F03_PICTOR/CODEBASE && npm run test:caviar`.
 
 ## Ce que Heisenberg NE fait PAS
 

@@ -206,6 +206,18 @@ jobs:
           PYEOF
           cp F03_PICTOR/OUT/${{ matrix.angle_id }}/pur_manifest.json F03_PICTOR/CODEBASE/src/data/pur_manifest.json
 
+      - name: CAVIAR Groupe 3 — miroir budget + tests moteur + gate (rouge dure)
+        run: |
+          set -e
+          # Miroir : HEISENBERG (source de vérité) == miroir F03 (consommé au rendu)
+          diff F03_PICTOR/HEISENBERG/caviar_budget.json F03_PICTOR/CODEBASE/src/data/caviar_budget.json \
+            || { echo '✗ miroir caviar_budget.json divergent — resynchroniser avant rendu.'; exit 1; }
+          # Tests du moteur de rendu narratif (zéro dépendance externe)
+          node F03_PICTOR/CODEBASE/tests/caviar_render.test.mjs
+          # Double barrage : le bloc caviar du pack respecte le Budget d'Attention
+          python3 F03_PICTOR/HEISENBERG/caviar_gate.py \
+            --manifest F03_PICTOR/OUT/${{ matrix.angle_id }}/pur_manifest.json
+
       - name: Rendre le MP4 F04 (Remotion) — ${{ matrix.angle_id }}
         working-directory: F03_PICTOR/CODEBASE
         env:
@@ -279,6 +291,14 @@ jobs:
           echo 'PUR incomplet : aucun artifact final lac-pur-final ne sera publié.'
           cat F03_PICTOR/OUT/pur_aggregate_report.json || true
           exit 1
+
+      - name: CAVIAR — gate Budget d'Attention sur le manifeste complet (rouge dure)
+        if: steps.aggregate.outcome == 'success'
+        run: |
+          # 2e barrage : le manifeste multi-entrées agrégé est conforme —
+          # sinon AUCUN bundle final n'est publié.
+          python3 F03_PICTOR/HEISENBERG/caviar_gate.py \
+            --manifest "${{ runner.temp }}/pur_manifest_full.json"
 
       - name: HEISENBERG — manifeste caviar par vidéo finale (advisory)
         if: steps.aggregate.outcome == 'success'

@@ -224,3 +224,42 @@ cat TRACKING/TODO_CONTINUATION.md
 - **Prochaine etape** : Groupe 2 (Phase 3 rendu narratif) APRES pack de test PERTURABO
   + GO operateur : Jump Cuts (table source<->timeline + recalcul durees G2/aggregate),
   ducking is_climax, rupture overlay, rendu B-roll.
+
+---
+
+## 2026-09-15 — GO operateur : GROUPE 3 CAVIAR implemente (rendu narratif + double barrage)
+
+- **`F03_PICTOR/CODEBASE/src/caviarRender.js`** (nouveau moteur, fonctions pures) :
+  - `buildCaviarTimeline()` : jump cuts = tuiles contigues timeline<->source (aucun
+    trou, aucun debordement) ; chaque tuile lit `startFrom` source ; evenement tombant
+    DANS un silence retire recale au point de coupe ; mapping `sourceToTimelineFrame()`.
+  - Punch-ins : courbe attack/hold/release, peak plafonne 1.15, jamais de zoom libre.
+  - B-roll numerote : overlay plein cadre (voix du clip CONTINUE), flash blanc a
+    l'ENTREE uniquement + SFX couple meme frame ; PAS de fichier resolu = PAS de B-roll.
+  - Smash audio : `caviarDuckVolumeAtFrame()` (-12 dB, rampe 2 frames) — s'activera
+    quand une piste musicale PUR existera.
+  - fx_mode=off (« clip normal ») : punch-ins/flashs/B-rolls deposes, jump cuts
+    CONSERVES (coupes de montage, pas des effets).
+  - **Double barrage rendu** : `verifyCaviarBudget()` + `enforceCaviarBudget()` —
+    depense > 55u ou cap depasse → evenements DEPOSES (le plus cher puis le plus
+    tardif d'abord) + gate rouge rapporte. Bloc `caviar` absent = rendu historique
+    a l'identique (zero regression).
+- **Wiring `PurPackComposition.jsx`** : segments jump cuts → `videoProps.startFrom`,
+  punch-ins multiplies dans le transform, B-roll/flash/SFX rendus, parite preview/CI.
+- **`F03_PICTOR/HEISENBERG/caviar_gate.py`** (nouveau gate, ROUGE DURE) : verifie le
+  bloc caviar du pack (depense, caps PAR entree, flash entree-seule, SFX entree-seule,
+  B-roll sans fichier, element unique) — avant rendu ET sur le manifeste agrege avant
+  publication du bundle final.
+- **Miroir budget** : `src/data/caviar_budget.json` (copie exacte de la source
+  HEISENBERG) — diff verifie a chaque rendu CI (H-MIRROR).
+- **CI `dev10_pur_render.yml`** : etapes H-MIRROR + H-ENGINE (`npm run test:caviar`)
+  + H-PACK (gate par runner) + H-AGGREGATE (gate sur l'agregat) — bloquantes.
+- **Tests** : `tests/caviar_render.test.mjs` 20/20 verts (zero dependance externe,
+  runner minimal `tests/harness.mjs`) + `test_caviar_gate.py` 14/14 verts +
+  non-regression `test_heisenberg.py` 20/20 + `test_caviar.py` Groupe 1 vert.
+  Un vrai bug attrape par les tests : le check de chevauchement des jump cuts
+  comparait `cut_at_sec` au lieu du DEBUT du silence (corrige).
+- **Prochaine etape** : Groupe 4 — memoire ARCHIVUM (`ARCHIVUM/narrativum/` :
+  manifest_ledger, gate_history, retention_log A/B caviar vs basique, lessons)
+  APRES decision doctrinale de conservation ; puis pack de test PERTURABO avec
+  bloc `caviar` pour un rendu reel de bout en bout.
