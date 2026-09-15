@@ -261,5 +261,21 @@ cat TRACKING/TODO_CONTINUATION.md
   comparait `cut_at_sec` au lieu du DEBUT du silence (corrige).
 - **Prochaine etape** : Groupe 4 — memoire ARCHIVUM (`ARCHIVUM/narrativum/` :
   manifest_ledger, gate_history, retention_log A/B caviar vs basique, lessons)
-  APRES decision doctrinale de conservation ; puis pack de test PERTURABO avec
-  bloc `caviar` pour un rendu reel de bout en bout.
+  APRES decision doctrinale de conservation.
+
+### 2026-09-15 (suite) — passthrough caviar pack→rendu : PRET POUR TEST REEL
+
+- Verifie : le bloc `caviar` du pack PERTURABO survit a TOUTE la chaine —
+  `parsePurPack` (bloc racine) → `parsePurPackMulti` (bloc racine + PAR ENTREE,
+  1 pack = 1 video) → composition (`entry.caviar ?? manifest.caviar`). Sans ce
+  passthrough, le bloc aurait ete silencieusement STRIPPE a la conversion
+  pack→manifeste : trouve et corrige avant le test operateur.
+- Miroirs `bridgeClipper.js` F03_PREVIEW/F03_PICTOR : passthrough identique,
+  diff bit-a-bit verifie par les tests (`npm run test:caviar` — 21/21 verts).
+- Contrat de pack documente : HEISENBERG_PLAN §8.1 (bloc racine, `file` resolu
+  via le registre numerote — MP4 dans `public/broll/`, jamais commite ; pas de
+  fichier = pas de B-roll ; jump cuts/punch-ins/smash SANS aucun asset).
+- **Statut** : la frégate peut recevoir un pack réel — jump cuts, punch-ins et
+  smash sont testables immediatement, B-roll des que le MP4 est depose dans
+  `F03_PICTOR/CODEBASE/public/broll/` + registre.
+

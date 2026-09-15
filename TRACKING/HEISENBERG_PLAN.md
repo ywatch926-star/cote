@@ -125,7 +125,36 @@ respiration gagne) et le gate passe ROUGE. Côté CI, `caviar_gate.py`
 publication du bundle final (budget PAR entrée). Miroir budget
 `src/data/caviar_budget.json` diffé avec la source HEISENBERG à chaque rendu.
 
-**Tests** : `npm run test:caviar` (20/20 — zéro dépendance externe) +
+**Tests** : `npm run test:caviar` (21/21 — zéro dépendance externe) +
 `test_caviar_gate.py` (14/14) + non-régression `test_heisenberg.py` (20/20)
 et `test_caviar.py` Groupe 1 (vert). Zéro régression : bloc `caviar` absent
 du pack = rendu historique à l'identique.
+
+### 8.1 Contrat de pack — test en conditions réelles
+
+Passthrough vérifié : le bloc `caviar` du pack survit à toute la chaîne
+`parsePurPack` → `parsePurPackMulti` (bloc racine) → **par entrée** en
+multi-vidéos → composition (`entry.caviar ?? manifest.caviar`). Miroirs
+F03_PREVIEW/F03_PICTOR `bridgeClipper.js` diffé à chaque exécution des tests.
+
+```json
+"caviar": {
+  "enabled": true,
+  "source": "heisenberg",
+  "jump_cuts":  [{ "cut_at_sec": 10.0, "removes_sec": 0.6 }],
+  "punchins":   [{ "at_sec": 5.0, "scale_to": 1.08, "attack_frames": 3, "hold_frames": 6, "release_frames": 9 }],
+  "brolls":     [{ "at_sec": 8.0, "numero": 1, "file": "broll/broll_01.mp4", "sfx": "impact", "duration_frames": 45 }],
+  "smash_audio": [{ "at_sec": 20.0, "duck_db": -12, "duration_sec": 0.8 }]
+}
+```
+
+- Bloc au niveau racine du pack (1 pack = 1 vidéo) ; en multi, CHAQUE pack
+  porte ses décisions (budget vérifié PAR entrée au gate).
+- `file` est résolu par le bras armé via le registre numéroté — le MP4 doit
+  exister dans `F03_PICTOR/CODEBASE/public/broll/` (jamais commité). **Pas de
+  fichier = pas de B-roll** (l'événement est déposé, le rendu reste propre).
+- Jump cuts / punch-ins / smash fonctionnent SANS aucun asset — un premier
+  test réel est possible avec un pack sans B-roll.
+- SFX disponibles côté rendu : `impact` (`public/sfx/impact.mp3`).
+- Le gate `caviar_gate.py` refuse le pack AVANT rendu si le bloc viole le
+  Budget d'Attention — corriger le pack, pas la doctrine.

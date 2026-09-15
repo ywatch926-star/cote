@@ -395,6 +395,9 @@ export function parsePurPack(pack, options = {}) {
     style: styleKnown ? resolvedStyle : '',
     style_source: operatorStyle ? 'operator' : declared ? 'pack' : styleKnown ? 'inferred' : 'none',
     style_unknown: !styleKnown,
+    // GROUPE 3 caviar : passthrough du bloc caviar du pack (décisions
+    // PERTURABO). Absent → undefined → JSON.stringify l'omet (packs v1).
+    caviar: (pack.caviar && typeof pack.caviar === 'object') ? pack.caviar : undefined,
     canvas: { ...canvas, aspect },
     style_params: options.styleParams || (styleKnown ? { ...PUR_STYLE_PARAMS_DEFAULTS[resolvedStyle] } : { ...PUR_STYLE_PARAMS_DEFAULTS.blur }),
     narrative: {
@@ -666,6 +669,8 @@ export function parsePurPackMulti(packs, options = {}) {
     if (!entry) return null;
     // Copie de l'overlay éditorial GLOBAL résolu sur chaque entrée (parité F04).
     entry.overlay = JSON.parse(JSON.stringify(single.narrative?.overlay || {}));
+    // GROUPE 3 caviar : chaque entrée porte SES décisions caviar (1 pack = 1 vidéo).
+    entry.caviar = (pack.caviar && typeof pack.caviar === 'object') ? pack.caviar : undefined;
     entry.pack_label = pack.pack_id || `pack_${index + 1}`;
     entry.angle_id = pack.identite?.angle_id || single.pur?.angle_id || `A${String(index + 1).padStart(2, '0')}`;
     return entry;
@@ -681,6 +686,7 @@ export function parsePurPackMulti(packs, options = {}) {
     style_source: operatorStyle ? 'operator' : declared ? 'pack' : styleKnown ? 'inferred' : 'none',
     style_unknown: !styleKnown,
     style_params: options.styleParams || base.style_params,
+    caviar: base.caviar,
     entries,
     rank_count: entries.length,
     final_rank: entries[entries.length - 1] || null,

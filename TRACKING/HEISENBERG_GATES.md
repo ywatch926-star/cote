@@ -55,6 +55,12 @@ jamais de constante dupliquée dans le code.
 Miroir budget consommé au rendu : `F03_PICTOR/CODEBASE/src/data/caviar_budget.json`
 (vérifié identique à la source HEISENBERG par H-MIRROR).
 
+**Passthrough pack→rendu (vérifié par test)** : le bloc `caviar` du pack
+survit à `parsePurPack` → `parsePurPackMulti` → par entrée (`entry.caviar`) →
+composition (`entry.caviar ?? manifest.caviar`). Les miroirs
+`bridgeClipper.js` F03_PREVIEW/F03_PICTOR sont diffé bit à bit à chaque
+exécution de `npm run test:caviar`. Contrat complet : HEISENBERG_PLAN §8.1.
+
 ## CI (branché)
 
 Le workflow `dev10_pur_render.yml` appelle Heisenberg après l'agrégation

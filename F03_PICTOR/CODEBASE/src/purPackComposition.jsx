@@ -182,13 +182,15 @@ export function PurPackComposition({ purManifest, session: sessionProp, entryInd
   const muteBg = fxOptions.mute_bg === true;
 
   // GROUPE 3 — HEISENBERG : rendu narratif caviar (jump cuts, punch-ins,
-  // B-roll numéroté, ducking). Bloc `manifest.caviar` absent → timeline
-  // vide, rendu historique à l'identique (zéro régression).
+  // B-roll numéroté, ducking). Bloc caviar de l'ENTRÉE (rendu CI = 1 vidéo,
+  // chaque pack porte ses décisions) avec repli bloc racine (pack mono v1).
+  // Absent partout → timeline vide, rendu historique à l'identique.
+  const caviarRaw = entry.caviar ?? manifest.caviar;
   const caviar = useMemo(
-    () => buildCaviarTimeline(manifest.caviar, caviarBudget, {
+    () => buildCaviarTimeline(caviarRaw, caviarBudget, {
       fps, speed, durationInFrames, fxOff,
     }),
-    [manifest.caviar, fps, speed, durationInFrames, fxOff],
+    [caviarRaw, fps, speed, durationInFrames, fxOff],
   );
   const jumpSegments = caviar.segments; // [] si inactif
   const caviarPunchScale = caviarPunchScaleAtFrame(caviar.punchins, localFrame);

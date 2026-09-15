@@ -225,6 +225,18 @@ test('normalizeCaviarBlock : entrées pourries → valeurs sûres', () => {
 
 /* ── Syntaxe JSX du wiring composition (parité preview/CI) ── */
 
+test('passthrough caviar : parsePurPack conserve le bloc du pack (parité preview/CI)', async () => {
+  // Le passthrough vit dans bridgeClipper.js (F03_PREVIEW + miroir F03_PICTOR).
+  // On vérifie ici les DEUX miroirs : identiques bit à bit + passthrough présent.
+  const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
+  const preview = read('../../../F03_PREVIEW/CODEBASE/src/preview/bridgeClipper.js');
+  const pictor = read('../src/bridgeClipper.js');
+  assert.equal(preview, pictor, 'miroirs bridgeClipper divergents — parité rompue');
+  assert.ok(preview.includes("caviar: (pack.caviar"), 'passthrough parsePurPack absent');
+  assert.ok(preview.includes('caviar: base.caviar'), 'passthrough parsePurPackMulti absent');
+  assert.ok(preview.includes('entry.caviar = (pack.caviar'), 'passthrough par entrée absent');
+});
+
 test('purPackComposition.jsx : syntaxe valide (transform esbuild si présent)', async () => {
   let esbuild = null;
   try { esbuild = (await import('esbuild')).default; } catch { /* CI : npm ci le fournit */ }
